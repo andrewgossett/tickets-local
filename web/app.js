@@ -72,6 +72,7 @@ const app = {
   aprsAudioDevices: [],
   mapWindowMode: new URLSearchParams(window.location.search).get("view") === "map",
   mobileMode: new URLSearchParams(window.location.search).get("view") === "mobile",
+  mobileDevices: [],
   map: null
 };
 
@@ -102,6 +103,7 @@ async function init() {
     $("#mobile-companion").hidden = false;
     applyTheme(localStorage.getItem("tickets-local-theme") || "dark");
     bindMobileCompanion();
+    await redeemMobileEnrollment();
     await loadMobileState(false);
     app.refreshTimer = setInterval(() => loadMobileState(false), 10000);
     return;
@@ -118,6 +120,7 @@ async function init() {
   await loadNetworkSettings();
   await loadConnections();
   await loadState(true);
+  await loadMobileDevices();
   await loadWeather(true);
   await loadWater(true);
   await loadIntegrations(true);
@@ -150,6 +153,8 @@ function bindMobileCompanion() {
   });
   $("#mobile-forget-key").addEventListener("click", () => {
     localStorage.removeItem("tickets-local-mobile-lan-key");
+    localStorage.removeItem("tickets-local-mobile-device-key");
+    localStorage.removeItem("tickets-local-mobile-responder");
     $("#mobile-access-key").value = "";
     $("#mobile-operations").hidden = true;
     $("#mobile-setup-card").hidden = false;
@@ -157,10 +162,34 @@ function bindMobileCompanion() {
   });
 }
 
+async function redeemMobileEnrollment() {
+  const token = new URLSearchParams(window.location.search).get("enroll") || "";
+  if (!token) return;
+  setMobileConnection(false, "Enrolling");
+  try {
+    const result = await api("/api/mobile/enroll", { method: "POST", body: { token, device_name: navigator.platform || "Mobile browser" }, skipMobileAuth: true });
+    localStorage.setItem("tickets-local-mobile-device-key", result.device_key);
+    localStorage.setItem("tickets-local-mobile-responder", result.device.responder_id);
+    localStorage.removeItem("tickets-local-mobile-lan-key");
+    history.replaceState({}, "", `${location.pathname}?view=mobile`);
+    toast("Phone enrolled", "This device now has its own revocable credential.");
+  } catch (error) {
+    $("#mobile-setup-message").textContent = error.message;
+    setMobileConnection(false, "Enrollment failed");
+  }
+}
+
 async function loadMobileState(showError = false) {
   setMobileConnection(false, "Connecting");
   try {
-    app.state = await api("/api/state");
+    const deviceKey = localStorage.getItem("tickets-local-mobile-device-key") || "";
+    if (deviceKey) {
+      const mobileState = await api("/api/mobile/state");
+      app.state = { ...app.state, responders: [mobileState.responder], incidents: mobileState.incidents };
+      localStorage.setItem("tickets-local-mobile-responder", mobileState.responder.id);
+    } else {
+      app.state = await api("/api/state");
+    }
     $("#mobile-setup-card").hidden = true;
     $("#mobile-operations").hidden = false;
     setMobileConnection(true, "Live");
@@ -182,10 +211,12 @@ function setMobileConnection(connected, message) {
 function renderMobileCompanion() {
   if (!app.mobileMode) return;
   const select = $("#mobile-responder-select");
+  const deviceEnrolled = Boolean(localStorage.getItem("tickets-local-mobile-device-key"));
   const savedID = localStorage.getItem("tickets-local-mobile-responder") || "";
   const responders = [...(app.state.responders || [])].sort((a, b) => displayResponder(a).localeCompare(displayResponder(b)));
   select.innerHTML = `<option value="">Choose your responder record</option>${responders.map(item => `<option value="${attr(item.id)}">${html(displayResponder(item))}</option>`).join("")}`;
   select.value = responders.some(item => item.id === savedID) ? savedID : "";
+  select.disabled = deviceEnrolled;
   const responder = responders.find(item => item.id === select.value);
   const current = $("#mobile-current-status");
   current.className = `mobile-current-status${responder ? ` status-${attr(responder.status)}` : ""}`;
@@ -211,7 +242,11 @@ async function updateMobileResponderStatus(status, button) {
   if (!responder) return;
   $$("[data-mobile-status]").forEach(item => item.disabled = true);
   try {
-    await api(`/api/responders/${encodeURIComponent(responder.id)}`, { method: "PUT", body: {
+    const deviceEnrolled = Boolean(localStorage.getItem("tickets-local-mobile-device-key"));
+    await api(deviceEnrolled ? "/api/mobile/status" : `/api/responders/${encodeURIComponent(responder.id)}`, { method: "PUT", body: deviceEnrolled ? {
+      status,
+      expected_updated_at: responder.updated_at
+    } : {
       name: responder.name,
       callsign: responder.callsign,
       type: responder.type,
@@ -348,6 +383,11 @@ function bindActions() {
   $("#network-regenerate-key").addEventListener("click", regenerateNetworkAccessKey);
   $("#network-test-connection").addEventListener("click", testNetworkConnection);
   $("#network-refresh-addresses").addEventListener("click", refreshNetworkAddresses);
+  $("#mobile-create-enrollment").addEventListener("click", createMobileEnrollment);
+  $("#mobile-device-list").addEventListener("click", event => {
+    const button = event.target.closest("[data-revoke-mobile-device]");
+    if (button) revokeMobileDevice(button.dataset.revokeMobileDevice);
+  });
   $("#connection-test-now").addEventListener("click", () => loadConnections(true));
   $("#connection-check-list").addEventListener("click", event => {
     const button = event.target.closest("[data-connection-settings]");
@@ -1152,7 +1192,74 @@ function renderNetworkSettings() {
   runtime.className = `network-runtime${app.network.restart_required ? " restart-required" : ""}`;
   runtime.innerHTML = `<strong>${html(app.network.message || "Network status unavailable")}</strong><span>${html(activeDetails.join(" · "))}</span>${clientList}`;
   $("#network-quit-apply").hidden = !app.network.restart_required;
+  renderMobileEnrollment();
   renderConnectionTester();
+}
+
+function renderMobileEnrollment() {
+  const responders = [...(app.state.responders || [])].sort((a, b) => displayResponder(a).localeCompare(displayResponder(b)));
+  const responderSelect = $("#mobile-enrollment-responder");
+  const selectedResponder = responderSelect.value;
+  responderSelect.innerHTML = `<option value="">Choose a responder</option>${responders.map(item => `<option value="${attr(item.id)}">${html(displayResponder(item))}</option>`).join("")}`;
+  if (responders.some(item => item.id === selectedResponder)) responderSelect.value = selectedResponder;
+  const addresses = app.network.host_urls || [];
+  const addressSelect = $("#mobile-enrollment-address");
+  const selectedAddress = addressSelect.value;
+  addressSelect.innerHTML = `<option value="">Choose a detected LAN address</option>${addresses.map(address => `<option value="${attr(address)}">${html(address)}</option>`).join("")}`;
+  if (addresses.includes(selectedAddress)) addressSelect.value = selectedAddress;
+  else if (addresses.length === 1) addressSelect.value = addresses[0];
+  const names = new Map(responders.map(item => [item.id, displayResponder(item)]));
+  $("#mobile-device-list").innerHTML = app.mobileDevices.length
+    ? `<strong>Enrolled phones</strong>${app.mobileDevices.map(device => `<div class="mobile-device-row"><span><b>${html(device.name)}</b> · ${html(names.get(device.responder_id) || "Deleted responder")}<small>${device.last_seen_at ? `Last used ${html(relativeTime(device.last_seen_at))}` : `Created ${html(relativeTime(device.created_at))}`}</small></span><button class="text-button" type="button" data-revoke-mobile-device="${attr(device.id)}">Revoke</button></div>`).join("")}`
+    : `<small>No phones are enrolled yet.</small>`;
+}
+
+async function loadMobileDevices() {
+  if (app.network.active_mode !== "host") {
+    app.mobileDevices = [];
+    return;
+  }
+  try {
+    const result = await api("/api/mobile/admin/devices");
+    app.mobileDevices = result.devices || [];
+    renderMobileEnrollment();
+  } catch {
+    app.mobileDevices = [];
+  }
+}
+
+async function createMobileEnrollment() {
+  const responderID = $("#mobile-enrollment-responder").value;
+  const hostURL = $("#mobile-enrollment-address").value;
+  if (!responderID || !hostURL) {
+    toast("Choose a responder and address", "Both selections are required before creating a QR code.", "warning");
+    return;
+  }
+  const button = $("#mobile-create-enrollment");
+  button.disabled = true;
+  try {
+    const result = await api("/api/mobile/admin/enrollment", { method: "POST", body: { responder_id: responderID, host_url: hostURL } });
+    const output = $("#mobile-enrollment-result");
+    output.hidden = false;
+    output.innerHTML = `<img src="${attr(result.qr_data_uri)}" alt="QR code for one-time phone enrollment"><strong>Scan with the responder’s phone camera</strong><span>Expires ${html(formatDateTime(result.expires_at))}</span><button class="text-button" type="button" data-copy-enrollment-url>Copy setup link</button>`;
+    $("[data-copy-enrollment-url]", output).addEventListener("click", () => copyText(result.url, "Enrollment link copied"));
+    toast("QR enrollment ready", "It expires in 10 minutes and works once.");
+  } catch (error) {
+    toast("Could not create enrollment", error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function revokeMobileDevice(id) {
+  if (!confirm("Revoke this phone? It will immediately lose mobile access.")) return;
+  try {
+    await api(`/api/mobile/admin/devices/${encodeURIComponent(id)}`, { method: "DELETE" });
+    await loadMobileDevices();
+    toast("Phone access revoked", "The device credential can no longer connect.");
+  } catch (error) {
+    toast("Could not revoke phone", error.message, "error");
+  }
 }
 
 function renderConnectionTester() {
@@ -2807,7 +2914,10 @@ function startNetworkStatusPoll() {
   setInterval(async () => {
     try {
       app.network = await api("/api/network/status");
-      if (app.page === "settings") renderNetworkSettings();
+      if (app.page === "settings") {
+        renderNetworkSettings();
+        await loadMobileDevices();
+      }
     } catch {
       // The local application health indicator covers a status interruption.
     }
@@ -2969,9 +3079,11 @@ function setFormBusy(form, busy) {
 
 async function api(url, options = {}) {
   const request = { method: options.method || "GET", headers: { Accept: "application/json", ...(options.headers || {}) } };
-  if (app.mobileMode) {
+  if (app.mobileMode && !options.skipMobileAuth) {
+    const deviceKey = localStorage.getItem("tickets-local-mobile-device-key") || "";
     const mobileKey = localStorage.getItem("tickets-local-mobile-lan-key") || "";
-    if (mobileKey) request.headers["X-Tickets-Local-LAN-Key"] = mobileKey;
+    if (deviceKey) request.headers["X-Tickets-Local-Device-Key"] = deviceKey;
+    else if (mobileKey) request.headers["X-Tickets-Local-LAN-Key"] = mobileKey;
     request.headers["X-Tickets-Local-Client"] = "Mobile companion";
   }
   if (options.body !== undefined) {

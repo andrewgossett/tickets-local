@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+- Added Host-generated phone QR enrollment with 10-minute, single-use tokens.
+  QR codes contain no shared LAN key; each phone receives a random credential
+  bound to one responder and can access only the scoped mobile state and status
+  routes.
+- Added Host-side enrolled-phone visibility, last-use timestamps, and immediate
+  per-device revocation. Device secrets are stored only as hashes in a separate
+  owner-readable file excluded from the operational event log and backups.
 - Added the first phone-focused mobile companion at `/?view=mobile`. A responder
   can connect to a trusted-LAN Host with the existing access key, select their
   record, update operational status with conflict protection, and see their
-  current assignment and the active incident list. QR enrollment and
-  device-specific revocable credentials remain the next planned increment.
+  current assignment and the active incident list.
 
 - Displayed the running release version prominently on both Settings and
   About & Licenses.

@@ -560,6 +560,14 @@ body.map-window-mode [data-map-expand] { display: none !important; }
 .network-addresses, .network-runtime { display: grid; gap: 6px; border-radius: 8px; padding: 10px 12px; background: var(--surface-2); color: var(--muted-2); font-size: 9px; }
 .network-address-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .network-addresses code { color: var(--primary); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; user-select: all; }
+.mobile-enrollment { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.mobile-enrollment > div:first-child { display: grid; gap: 3px; }
+.mobile-enrollment small { color: var(--muted); line-height: 1.4; }
+.mobile-enrollment-result { display: grid; justify-items: center; gap: 7px; padding: 12px; border-radius: 9px; background: white; color: #14202b; text-align: center; }
+.mobile-enrollment-result img { display: block; width: min(280px, 100%); height: auto; image-rendering: pixelated; }
+.mobile-device-list { display: grid; gap: 7px; }
+.mobile-device-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 7px; border-top: 1px solid var(--border); }
+.mobile-device-row span { display: grid; gap: 2px; }
 .network-runtime strong { color: var(--text); font-size: 10px; }
 .network-runtime .network-client-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .network-runtime .network-client { border-radius: 20px; padding: 4px 8px; background: var(--surface-3); color: var(--muted); }

@@ -42,6 +42,7 @@ type apiServer struct {
 	integrations *IntegrationService
 	mapTiles     *MapTileService
 	routing      *RoutingService
+	mobile       *MobileAccessStore
 }
 
 func newAPIServer(store *Store, assets embed.FS, logger *log.Logger) (*apiServer, error) {
@@ -107,6 +108,12 @@ func (s *apiServer) Handler() http.Handler {
 	mux.HandleFunc("/api/network/settings", s.networkSettings)
 	mux.HandleFunc("/api/network/status", s.networkStatus)
 	mux.HandleFunc("/api/network/test", s.networkTest)
+	mux.HandleFunc("/api/mobile/enroll", s.mobileEnroll)
+	mux.HandleFunc("/api/mobile/state", s.mobileState)
+	mux.HandleFunc("/api/mobile/status", s.mobileStatus)
+	mux.HandleFunc("/api/mobile/admin/enrollment", s.mobileAdminEnrollment)
+	mux.HandleFunc("/api/mobile/admin/devices", s.mobileAdminDevices)
+	mux.HandleFunc("/api/mobile/admin/devices/", s.mobileAdminDevice)
 	mux.HandleFunc("/api/connections", s.connectionDiagnostics)
 	mux.HandleFunc("/api/events", s.events)
 	mux.HandleFunc("/api/backup", s.backup)

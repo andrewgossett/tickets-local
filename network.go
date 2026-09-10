@@ -502,11 +502,11 @@ func shouldProxyToHost(path string) bool {
 }
 
 func protectedLANPath(path string) bool {
-	return path == "/healthz" || strings.HasPrefix(path, "/api/")
+	return path == "/healthz" || (strings.HasPrefix(path, "/api/") && !strings.HasPrefix(path, "/api/mobile/"))
 }
 
 func localHostOnlyPath(path string) bool {
-	return path == "/api/shutdown" || strings.HasPrefix(path, "/api/network/")
+	return path == "/api/shutdown" || strings.HasPrefix(path, "/api/network/") || strings.HasPrefix(path, "/api/mobile/admin/")
 }
 
 func loopbackRequest(r *http.Request) bool {

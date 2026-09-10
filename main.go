@@ -87,6 +87,10 @@ func main() {
 	}
 	api.aprs = aprs
 	api.network = networkRuntime
+	api.mobile, err = OpenMobileAccessStore(dataDir)
+	if err != nil {
+		log.Fatalf("open mobile device credentials: %v", err)
+	}
 	api.requestQuit = stop
 
 	listenHost := "127.0.0.1"

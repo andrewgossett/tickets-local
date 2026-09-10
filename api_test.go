@@ -88,7 +88,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.7`,
+		`Version 0.5.8`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -101,6 +101,9 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, mobileElement := range []string{
 		`id="mobile-companion"`,
+		`id="mobile-create-enrollment"`,
+		`id="mobile-enrollment-result"`,
+		`id="mobile-device-list"`,
 		`id="mobile-access-key"`,
 		`id="mobile-responder-select"`,
 		`data-mobile-status="enroute"`,
@@ -142,6 +145,9 @@ func TestAPILifecycle(t *testing.T) {
 		`get("view") === "mobile"`,
 		`localStorage.getItem("tickets-local-mobile-lan-key")`,
 		`request.headers["X-Tickets-Local-LAN-Key"]`,
+		`request.headers["X-Tickets-Local-Device-Key"]`,
+		`/api/mobile/admin/enrollment`,
+		`/api/mobile/status`,
 		`async function updateMobileResponderStatus`,
 		`expected_updated_at: responder.updated_at`,
 	} {

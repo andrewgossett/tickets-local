@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.7"
+	version     = "0.5.8"
 )
 
 type State struct {

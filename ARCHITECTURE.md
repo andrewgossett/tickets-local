@@ -96,6 +96,10 @@ Important routes:
 | `GET/PUT /api/network/settings` | Read or save this computer's local role |
 | `POST /api/network/test` | Validate a proposed Host address, key, role, and version |
 | `GET /api/network/status` | Active role, restart state, addresses, and recent Clients |
+| `POST /api/mobile/enroll` | Redeem a short-lived, single-use phone enrollment token |
+| `GET /api/mobile/state` | Device-scoped responder assignment and active incidents |
+| `PUT /api/mobile/status` | Device-scoped status update for its bound responder |
+| `/api/mobile/admin/...` | Host-local QR enrollment and device revocation |
 | `GET /api/connections` | Bounded live diagnostics for LAN peers and enabled providers |
 | `GET /api/events` | Server-Sent Event notification stream |
 | `GET /api/backup` | Replayable event-log download |
@@ -177,6 +181,17 @@ Authentication must be implemented before any LAN listener is added. The next
 networked profile should include password hashing, session rotation, CSRF
 protection, RBAC, TLS guidance, log actor identity, and a data-directory process
 lock.
+
+Mobile QR enrollment is available only in active Host mode. Host-local Settings
+creates a 256-bit single-use token held in memory for at most 10 minutes; the QR
+contains the selected LAN URL and that token, never the shared LAN key. On
+redemption the Host issues a separate 256-bit device credential bound to one
+responder. Only its SHA-256 hash is persisted in owner-readable
+`mobile-devices.json`, which remains outside the event log and backups. Device
+credentials authorize only the narrow mobile state and responder-status routes
+and can be revoked independently. This improves credential isolation but does
+not add transport encryption; the trusted-private-LAN restriction still
+applies.
 
 ## Extension order
 
