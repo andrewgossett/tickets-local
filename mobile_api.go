@@ -166,6 +166,7 @@ func (s *apiServer) mobileStatus(w http.ResponseWriter, r *http.Request) {
 		Name: responder.Name, Callsign: responder.Callsign, Type: responder.Type, Status: input.Status,
 		Phone: responder.Phone, Capabilities: responder.Capabilities, Latitude: responder.Latitude,
 		Longitude: responder.Longitude, APRSEnabled: responder.APRSEnabled, Notes: responder.Notes,
+		MapLabel: responder.MapLabel, MarkerColor: responder.MarkerColor,
 		ExpectedUpdatedAt: input.ExpectedUpdatedAt,
 	})
 	if err != nil {

@@ -86,9 +86,13 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(indexHTML, "public USGS service") {
 		t.Fatal("water settings are missing nearby named-gauge discovery and its location disclosure")
 	}
+	if strings.Count(indexHTML, `name="map_label"`) != 2 ||
+		strings.Count(indexHTML, `name="marker_color"`) != 2 {
+		t.Fatal("responder and facility forms are missing map label or marker color controls")
+	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.8`,
+		`Version 0.5.9`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -212,6 +216,11 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(stylesText, `.map-marker.water.flood-major { --marker: #a855f7; }`) ||
 		!strings.Contains(stylesText, `.water-gauge.flood-moderate { border-color: #ef4444; }`) {
 		t.Fatal("river gauges are not color-coded by observed or forecast flood category")
+	}
+	if !strings.Contains(scriptText, `function mapMarkerLabel(item, fallback)`) ||
+		!strings.Contains(scriptText, `marker.style.setProperty("--marker", point.markerColor)`) ||
+		!strings.Contains(stylesText, `.map-marker > span > b`) {
+		t.Fatal("custom responder and facility map labels or colors are not rendered")
 	}
 	if !strings.Contains(scriptText, `async function discoverWaterSites()`) ||
 		!strings.Contains(scriptText, `function addDiscoveredWaterSites()`) {

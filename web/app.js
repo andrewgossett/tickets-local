@@ -256,6 +256,8 @@ async function updateMobileResponderStatus(status, button) {
       latitude: responder.latitude,
       longitude: responder.longitude,
       aprs_enabled: Boolean(responder.aprs_enabled),
+      map_label: responder.map_label || "",
+      marker_color: responder.marker_color || "",
       notes: responder.notes,
       expected_updated_at: responder.updated_at
     }});
@@ -2025,11 +2027,13 @@ function openResponder(responder = null) {
   $("#opengts-help").textContent = app.network.active_mode === "host" ? "Send gprmc-style lat, lon, date, time, speed, head, and alt parameters. Use any Basic Auth username and the LAN access key as password." : "Switch this computer to Host mode before configuring a GPS tracker on the LAN.";
   if (responder) {
     setForm(form, responder);
+    form.elements.marker_color.value = responder.marker_color || "#3b82f6";
     form.elements.capabilities.value = responder.capabilities.join(", ");
     form.elements.aprs_enabled.checked = Boolean(responder.aprs_enabled);
   } else {
     form.elements.status.value = "available";
     form.elements.aprs_enabled.checked = false;
+    form.elements.marker_color.value = "#3b82f6";
   }
   dialog.showModal();
   requestAnimationFrame(() => form.elements.name.focus());
@@ -2083,6 +2087,8 @@ async function saveResponder(event) {
     latitude: optionalNumber(form.elements.latitude.value),
     longitude: optionalNumber(form.elements.longitude.value),
     aprs_enabled: form.elements.aprs_enabled.checked,
+    map_label: form.elements.map_label.value,
+    marker_color: form.elements.marker_color.value,
     notes: form.elements.notes.value,
     expected_updated_at: id ? form.dataset.updatedAt : undefined
   };
@@ -2126,10 +2132,12 @@ function openFacility(facility = null) {
   $("#facility-dialog-title").textContent = facility ? "Edit facility" : "Add facility";
   if (facility) {
     setForm(form, facility);
+    form.elements.marker_color.value = facility.marker_color || "#22c55e";
   } else {
     form.elements.status.value = "open";
     form.elements.capacity.value = 0;
     form.elements.occupied.value = 0;
+    form.elements.marker_color.value = "#22c55e";
   }
   dialog.showModal();
   requestAnimationFrame(() => form.elements.name.focus());
@@ -2152,6 +2160,8 @@ async function saveFacility(event) {
       occupied: Number(form.elements.occupied.value || 0),
       latitude: optionalNumber(form.elements.latitude.value),
       longitude: optionalNumber(form.elements.longitude.value),
+      map_label: form.elements.map_label.value,
+      marker_color: form.elements.marker_color.value,
       notes: form.elements.notes.value,
       expected_updated_at: id ? form.dataset.updatedAt : undefined
     };
@@ -3754,7 +3764,8 @@ class SituationMap {
       marker.style.top = `${top}px`;
       marker.title = point.label;
       marker.setAttribute("aria-label", point.label);
-      marker.innerHTML = `<span></span><small class="marker-label">${html(point.label)}</small>`;
+      if (point.markerColor) marker.style.setProperty("--marker", point.markerColor);
+      marker.innerHTML = `<span>${point.mapLabel ? `<b>${html(point.mapLabel)}</b>` : ""}</span><small class="marker-label">${html(point.label)}</small>`;
       marker.addEventListener("click", () => {
         if (point.kind === "incident") openIncident(app.state.incidents.find(item => item.id === point.id));
         else if (point.kind === "responder") openResponder(app.state.responders.find(item => item.id === point.id));
@@ -4147,11 +4158,13 @@ function mapPoints(state) {
         label: `${displayResponder(item)}${aprsLabel ? ` · ${aprsLabel}` : ""}`,
         latitude: item.latitude,
         longitude: item.longitude,
+        mapLabel: mapMarkerLabel(item, displayResponder(item)),
+        markerColor: item.marker_color,
         stale
       });
     });
   state.facilities.filter(item => item.latitude != null && item.longitude != null)
-    .forEach(item => points.push({ id: item.id, kind: "facility", label: item.name, latitude: item.latitude, longitude: item.longitude }));
+    .forEach(item => points.push({ id: item.id, kind: "facility", label: item.name, latitude: item.latitude, longitude: item.longitude, mapLabel: mapMarkerLabel(item, item.name), markerColor: item.marker_color }));
   (state.locations || []).filter(item => item.latitude != null && item.longitude != null)
     .forEach(item => points.push({ id: item.id, kind: "location", label: item.name, latitude: item.latitude, longitude: item.longitude }));
   if (state.settings.aprs?.area_enabled ||
@@ -4175,6 +4188,13 @@ function mapPoints(state) {
   for(const item of app.integrations?.meshcore_nodes||[])points.push({id:item.id,kind:"meshcore",label:`${item.name||"MeshCore node"}${item.kind?` · ${label(item.kind)}`:""}${item.details?` · ${item.details}`:""}${item.observed_at?` · ${relativeTime(item.observed_at)}`:""}`,latitude:item.latitude,longitude:item.longitude});
   for(const item of app.integrations?.sensors||[])if(item.latitude!=null&&item.longitude!=null)points.push({id:item.id,kind:"sensor",label:`${item.name||item.id}${item.temperature_f==null?"":` · ${Math.round(item.temperature_f)}°F`}${item.status?` · ${item.status}`:""} · ${relativeTime(item.observed_at)}`,latitude:item.latitude,longitude:item.longitude});
   return points;
+}
+
+function mapMarkerLabel(item, fallback) {
+  const configured = String(item.map_label || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+  if (configured.length >= 2) return configured;
+  const automatic = String(fallback || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+  return automatic.length >= 2 ? automatic : "";
 }
 
 function mapPointKindLabel(kind) {

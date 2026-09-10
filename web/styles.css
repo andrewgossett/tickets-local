@@ -365,6 +365,9 @@ html[data-theme="light"] .map-tile { filter: saturate(.8) brightness(.98); }
 .map-marker { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; cursor: pointer; pointer-events: auto; }
 .map-marker > span { display: grid; place-items: center; width: 26px; height: 26px; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--marker); box-shadow: 0 4px 12px rgba(0, 0, 0, .38); }
 .map-marker > span::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: white; }
+.map-marker.responder > span, .map-marker.facility > span { width: 31px; height: 31px; }
+.map-marker.responder > span::after, .map-marker.facility > span::after { display: none; }
+.map-marker > span > b { transform: rotate(45deg); color: white; font-size: 8px; line-height: 1; letter-spacing: -.25px; text-shadow: 0 1px 2px rgba(0, 0, 0, .55); }
 .map-marker.incident { --marker: var(--critical); }
 .map-marker.incident.stale > span { border-color: #fde68a; animation: stale-map-marker 1.8s infinite; }
 .map-marker.responder { --marker: var(--primary); }

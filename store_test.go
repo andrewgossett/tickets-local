@@ -421,6 +421,48 @@ func TestStoreChangingTrackedCallsignClearsOldAPRSPositionAndTrail(t *testing.T)
 	}
 }
 
+func TestMapMarkerAppearancePersistsAndValidates(t *testing.T) {
+	dataDir := t.TempDir()
+	store, err := OpenStore(dataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	responder, err := store.CreateResponder(ResponderInput{
+		Name: "Medic 1", Status: "available", MapLabel: "m1", MarkerColor: "#12ABef",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if responder.MapLabel != "M1" || responder.MarkerColor != "#12abef" {
+		t.Fatalf("responder appearance was not normalized: %+v", responder)
+	}
+	facility, err := store.CreateFacility(FacilityInput{
+		Name: "Emergency Operations Center", Status: "open", MapLabel: "eoc", MarkerColor: "#22C55E",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if facility.MapLabel != "EOC" || facility.MarkerColor != "#22c55e" {
+		t.Fatalf("facility appearance was not normalized: %+v", facility)
+	}
+	if _, err := store.CreateResponder(ResponderInput{Name: "Bad", Status: "available", MapLabel: "X"}); err == nil {
+		t.Fatal("one-character map label was accepted")
+	}
+	if _, err := store.CreateFacility(FacilityInput{Name: "Bad", Status: "open", MapLabel: "A!", MarkerColor: "red"}); err == nil {
+		t.Fatal("invalid map appearance was accepted")
+	}
+
+	replayed, err := OpenStore(dataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := replayed.Snapshot()
+	if state.Responders[0].MapLabel != "M1" || state.Responders[0].MarkerColor != "#12abef" ||
+		state.Facilities[0].MapLabel != "EOC" || state.Facilities[0].MarkerColor != "#22c55e" {
+		t.Fatalf("map appearance was not replayed: %+v", state)
+	}
+}
+
 func incidentInputFromIncident(incident Incident) IncidentInput {
 	return IncidentInput{
 		Title:        incident.Title,

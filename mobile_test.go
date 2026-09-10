@@ -98,7 +98,7 @@ func TestMobileDeviceCanReadScopedStateAndUpdateOnlyItsResponder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	responder, err := operational.CreateResponder(ResponderInput{Name: "Field Team", Status: "available"})
+	responder, err := operational.CreateResponder(ResponderInput{Name: "Field Team", Status: "available", MapLabel: "FT", MarkerColor: "#123abc"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,5 +164,8 @@ func TestMobileDeviceCanReadScopedStateAndUpdateOnlyItsResponder(t *testing.T) {
 	updated, _ := responderFromState(operational.Snapshot(), responder.ID)
 	if updated.Status != "enroute" {
 		t.Fatalf("responder status = %q, want enroute", updated.Status)
+	}
+	if updated.MapLabel != "FT" || updated.MarkerColor != "#123abc" {
+		t.Fatalf("mobile status update cleared map appearance: %+v", updated)
 	}
 }

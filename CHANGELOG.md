@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added customizable responder and facility map markers. Operators can select
+  a color and a two- or three-character unit/facility label; existing records
+  continue to work and receive an automatic short label on the map.
+
 - Added Host-generated phone QR enrollment with 10-minute, single-use tokens.
   QR codes contain no shared LAN key; each phone receives a random credential
   bound to one responder and can access only the scoped mobile state and status

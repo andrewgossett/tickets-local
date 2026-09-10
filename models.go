@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.8"
+	version     = "0.5.9"
 )
 
 type State struct {
@@ -394,6 +394,8 @@ type Responder struct {
 	AltitudeFeet      *float64   `json:"altitude_feet,omitempty"`
 	APRSSymbol        string     `json:"aprs_symbol,omitempty"`
 	APRSComment       string     `json:"aprs_comment,omitempty"`
+	MapLabel          string     `json:"map_label,omitempty"`
+	MarkerColor       string     `json:"marker_color,omitempty"`
 	Notes             string     `json:"notes"`
 	UpdatedAt         time.Time  `json:"updated_at"`
 }
@@ -414,18 +416,20 @@ type TrackPoint struct {
 }
 
 type Facility struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	Status    string    `json:"status"`
-	Address   string    `json:"address"`
-	Phone     string    `json:"phone"`
-	Capacity  int       `json:"capacity"`
-	Occupied  int       `json:"occupied"`
-	Latitude  *float64  `json:"latitude,omitempty"`
-	Longitude *float64  `json:"longitude,omitempty"`
-	Notes     string    `json:"notes"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Type        string    `json:"type"`
+	Status      string    `json:"status"`
+	Address     string    `json:"address"`
+	Phone       string    `json:"phone"`
+	Capacity    int       `json:"capacity"`
+	Occupied    int       `json:"occupied"`
+	Latitude    *float64  `json:"latitude,omitempty"`
+	Longitude   *float64  `json:"longitude,omitempty"`
+	MapLabel    string    `json:"map_label,omitempty"`
+	MarkerColor string    `json:"marker_color,omitempty"`
+	Notes       string    `json:"notes"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Location struct {
@@ -601,6 +605,8 @@ type ResponderInput struct {
 	Latitude          *float64   `json:"latitude"`
 	Longitude         *float64   `json:"longitude"`
 	APRSEnabled       bool       `json:"aprs_enabled"`
+	MapLabel          string     `json:"map_label"`
+	MarkerColor       string     `json:"marker_color"`
 	Notes             string     `json:"notes"`
 	ExpectedUpdatedAt *time.Time `json:"expected_updated_at,omitempty"`
 }
@@ -622,6 +628,8 @@ type FacilityInput struct {
 	Occupied          int        `json:"occupied"`
 	Latitude          *float64   `json:"latitude"`
 	Longitude         *float64   `json:"longitude"`
+	MapLabel          string     `json:"map_label"`
+	MarkerColor       string     `json:"marker_color"`
 	Notes             string     `json:"notes"`
 	ExpectedUpdatedAt *time.Time `json:"expected_updated_at,omitempty"`
 }

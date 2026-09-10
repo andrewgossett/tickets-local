@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/png" href="/icon-64.png">
   <title>Tickets Local</title>
-  <link rel="stylesheet" href="/styles.css?v=0.5.8">
+  <link rel="stylesheet" href="/styles.css?v=0.5.9">
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -399,7 +399,7 @@
 
         <section class="page" data-page-view="settings">
           <div class="section-heading">
-            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.8</span>
+            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.9</span>
           </div>
           <div class="settings-grid">
             <form class="panel network-settings" id="network-settings-form">
@@ -666,7 +666,7 @@
         <section class="page" data-page-view="about">
           <div class="section-heading"><div><p class="eyebrow">PROJECT INFORMATION</p><h2>About &amp; Licenses</h2><p>Licensing, attribution, and operational limitations.</p></div></div>
           <article class="panel about-panel"><div class="settings-body">
-            <h3>Tickets Local <span class="version-badge">Version 0.5.8</span></h3>
+            <h3>Tickets Local <span class="version-badge">Version 0.5.9</span></h3>
             <p><strong>Copyright © 2026 Andrew Mark Gossett and Tickets Local contributors.</strong></p>
             <p>Tickets Local is an AI-assisted hobby project. It is not an official OpenISES release, certified dispatch system, emergency service, or substitute for validated public-safety systems and procedures.</p>
             <p><strong>No warranty:</strong> this software is provided without warranty of any kind under GNU GPL v2. Operators are responsible for evaluating its suitability, data sources, connectivity, and outputs.</p>
@@ -830,6 +830,7 @@
         <input type="hidden" name="id">
         <div class="form-row two"><label>Name<input name="name" maxlength="100" placeholder="Medic 1"></label><label>Callsign<input name="callsign" maxlength="24" placeholder="M1"></label></div>
         <div class="form-row two"><label>Type<input name="type" maxlength="60" placeholder="Medical, command, search…"></label><label>Status<select name="status"><option value="available">Available</option><option value="assigned">Assigned</option><option value="enroute">En route</option><option value="onscene">On scene</option><option value="out_of_service">Out of service</option></select></label></div>
+        <div class="form-row two"><label>Map label<input name="map_label" maxlength="3" minlength="2" pattern="[A-Za-z0-9]{2,3}" placeholder="M1"><small class="field-help">Two or three letters or numbers shown inside the marker.</small></label><label>Marker color<input name="marker_color" type="color" value="#3b82f6"><small class="field-help">Used for this responder on every map.</small></label></div>
         <label>Phone<input name="phone" type="tel" maxlength="40"></label>
         <label>Capabilities<input name="capabilities" placeholder="ALS, transport, chainsaw (comma separated)"></label>
         <label class="toggle-row">
@@ -854,6 +855,7 @@
         <input type="hidden" name="id">
         <label>Name<input name="name" maxlength="120" required></label>
         <div class="form-row two"><label>Type<input name="type" maxlength="60" placeholder="Hospital, shelter, station…"></label><label>Status<select name="status"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label></div>
+        <div class="form-row two"><label>Map label<input name="map_label" maxlength="3" minlength="2" pattern="[A-Za-z0-9]{2,3}" placeholder="ER"><small class="field-help">Two or three letters or numbers shown inside the marker.</small></label><label>Marker color<input name="marker_color" type="color" value="#22c55e"><small class="field-help">Used for this facility on every map.</small></label></div>
         <label>Use a saved location<select id="facility-saved-location"><option value="">Enter a different location</option></select></label>
         <div>
           <div class="form-section-heading"><label for="facility-address">Address or place</label><button type="button" class="text-button" id="facility-geocode-button"><svg><use href="#i-map-pin"/></svg>Look up address</button></div>
@@ -953,6 +955,6 @@
   </div>
 
   <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
-  <script src="/app.js?v=0.5.8" defer></script>
+  <script src="/app.js?v=0.5.9" defer></script>
 </body>
 </html>

@@ -504,6 +504,8 @@ func (s *Store) CreateResponder(input ResponderInput) (Responder, error) {
 		Latitude:     input.Latitude,
 		Longitude:    input.Longitude,
 		APRSEnabled:  input.APRSEnabled,
+		MapLabel:     normalizeMapLabel(input.MapLabel),
+		MarkerColor:  normalizeMarkerColor(input.MarkerColor),
 		Notes:        strings.TrimSpace(input.Notes),
 		UpdatedAt:    now,
 	}
@@ -540,6 +542,8 @@ func (s *Store) UpdateResponder(id string, input ResponderInput) (Responder, err
 	responder.Latitude = input.Latitude
 	responder.Longitude = input.Longitude
 	responder.APRSEnabled = input.APRSEnabled
+	responder.MapLabel = normalizeMapLabel(input.MapLabel)
+	responder.MarkerColor = normalizeMarkerColor(input.MarkerColor)
 	aprsIdentityChanged := input.APRSEnabled &&
 		(!previousAPRSEnabled || !strings.EqualFold(previousCallsign, responder.Callsign))
 	resetAPRSState := !input.APRSEnabled || aprsIdentityChanged
@@ -631,18 +635,20 @@ func (s *Store) CreateFacility(input FacilityInput) (Facility, error) {
 	defer s.mu.Unlock()
 
 	facility := Facility{
-		ID:        newID("fac"),
-		Name:      clean(input.Name),
-		Type:      clean(input.Type),
-		Status:    defaultString(input.Status, "open"),
-		Address:   clean(input.Address),
-		Phone:     clean(input.Phone),
-		Capacity:  input.Capacity,
-		Occupied:  input.Occupied,
-		Latitude:  input.Latitude,
-		Longitude: input.Longitude,
-		Notes:     strings.TrimSpace(input.Notes),
-		UpdatedAt: time.Now().UTC(),
+		ID:          newID("fac"),
+		Name:        clean(input.Name),
+		Type:        clean(input.Type),
+		Status:      defaultString(input.Status, "open"),
+		Address:     clean(input.Address),
+		Phone:       clean(input.Phone),
+		Capacity:    input.Capacity,
+		Occupied:    input.Occupied,
+		Latitude:    input.Latitude,
+		Longitude:   input.Longitude,
+		MapLabel:    normalizeMapLabel(input.MapLabel),
+		MarkerColor: normalizeMarkerColor(input.MarkerColor),
+		Notes:       strings.TrimSpace(input.Notes),
+		UpdatedAt:   time.Now().UTC(),
 	}
 	activity := newActivity("facility.created", fmt.Sprintf("Facility added: %s", facility.Name), "facility", facility.ID)
 	if _, err := s.commitLocked("facility.created", changeSet{Facility: &facility, Activity: &activity}); err != nil {
@@ -675,6 +681,8 @@ func (s *Store) UpdateFacility(id string, input FacilityInput) (Facility, error)
 	facility.Occupied = input.Occupied
 	facility.Latitude = input.Latitude
 	facility.Longitude = input.Longitude
+	facility.MapLabel = normalizeMapLabel(input.MapLabel)
+	facility.MarkerColor = normalizeMarkerColor(input.MarkerColor)
 	facility.Notes = strings.TrimSpace(input.Notes)
 	facility.UpdatedAt = time.Now().UTC()
 	activity := newActivity("facility.updated", fmt.Sprintf("%s updated — %s", facility.Name, label(facility.Status)), "facility", facility.ID)
@@ -1574,6 +1582,9 @@ func validateResponderInput(input ResponderInput) error {
 	if input.APRSEnabled && !validTrackedCallsign(strings.ToUpper(clean(input.Callsign))) {
 		return validationError{"a valid callsign with optional SSID is required for APRS tracking"}
 	}
+	if !validMapAppearance(input.MapLabel, input.MarkerColor) {
+		return validationError{"map label must be 2–3 letters or numbers and color must be a hexadecimal color"}
+	}
 	return nil
 }
 
@@ -1593,7 +1604,32 @@ func validateFacilityInput(input FacilityInput) error {
 	if !validOptionalCoordinates(input.Latitude, input.Longitude) {
 		return validationError{"facility coordinates are invalid"}
 	}
+	if !validMapAppearance(input.MapLabel, input.MarkerColor) {
+		return validationError{"map label must be 2–3 letters or numbers and color must be a hexadecimal color"}
+	}
 	return nil
+}
+
+func validMapAppearance(mapLabel, markerColor string) bool {
+	label := normalizeMapLabel(mapLabel)
+	if label != "" && (len(label) < 2 || len(label) > 3) {
+		return false
+	}
+	for _, character := range label {
+		if (character < 'A' || character > 'Z') && (character < '0' || character > '9') {
+			return false
+		}
+	}
+	color := strings.TrimSpace(markerColor)
+	return color == "" || validOverlayColor(color)
+}
+
+func normalizeMapLabel(value string) string {
+	return strings.ToUpper(strings.TrimSpace(value))
+}
+
+func normalizeMarkerColor(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func validateLocationInput(input LocationInput) error {
