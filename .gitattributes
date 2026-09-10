@@ -1,0 +1,20 @@
+# Source archives must exclude operational data and private signing material,
+# even if someone accidentally force-adds a normally ignored path.
+**/dist/** export-ignore
+**/.tools/** export-ignore
+**/.pnpm-home/** export-ignore
+**/logs/** export-ignore
+**/attachments/** export-ignore
+**/snapshots/** export-ignore
+**/events.ndjson* export-ignore
+**/network.json export-ignore
+**/aprs-credentials.json export-ignore
+**/aprs-passcode export-ignore
+**/integration-cache.json export-ignore
+**/*.log export-ignore
+**/*.key export-ignore
+**/*.pem export-ignore
+**/*.p12 export-ignore
+**/*.pfx export-ignore
+**/id_rsa* export-ignore
+**/id_ed25519* export-ignore

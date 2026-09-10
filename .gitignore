@@ -1,0 +1,31 @@
+/dist/
+/.tools/
+/.pnpm-home/
+*.log
+.DS_Store
+
+# Runtime operational data and credentials must never enter source control.
+events.ndjson
+events.ndjson.*
+aprs-passcode
+logs/
+network.json
+aprs-credentials.json
+integration-cache.json
+attachments/
+snapshots/
+
+# Signing keys and certificates remain in platform credential stores.
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Local Codex workflow and development planning files are intentionally private.
+AGENTS.md
+CODEX_HANDOFF.md
+INTEGRATION_BACKLOG.md
+.agents/
+.codex/

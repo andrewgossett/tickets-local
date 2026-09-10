@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" type="image/png" href="/icon-64.png">
+  <title>Tickets Local</title>
+  <link rel="stylesheet" href="/styles.css?v=0.5.6">
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.6 2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21V5l6-3 6 3v16"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/><path d="M9 17h1"/><path d="M14 17h1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.2A8 8 0 0 1 9.8 3.5 9 9 0 1 0 20.5 14.2Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24"><path d="M5.6 16.4a6.2 6.2 0 0 1 0-8.8M2.8 19.2a10.2 10.2 0 0 1 0-14.4M18.4 7.6a6.2 6.2 0 0 1 0 8.8M21.2 4.8a10.2 10.2 0 0 1 0 14.4"/><circle cx="12" cy="12" r="2"/><path d="M12 14v7"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">TL</div>
+        <div>
+          <strong>Tickets</strong>
+          <span>Local CAD</span>
+        </div>
+      </div>
+      <nav aria-label="Primary">
+        <button class="nav-item active" data-page="dashboard"><svg><use href="#i-grid"/></svg><span>Situation</span></button>
+        <button class="nav-item" data-page="incidents"><svg><use href="#i-alert"/></svg><span>Incidents</span><b id="nav-incident-count">0</b></button>
+        <button class="nav-item" data-page="responders"><svg><use href="#i-users"/></svg><span>Responders</span></button>
+        <button class="nav-item" data-page="facilities"><svg><use href="#i-building"/></svg><span>Facilities</span></button>
+        <button class="nav-item" data-page="locations"><svg><use href="#i-map-pin"/></svg><span>Locations</span></button>
+        <button class="nav-item" data-page="assets"><svg><use href="#i-building"/></svg><span>Assets</span></button>
+        <button class="nav-item" data-page="schedule"><svg><use href="#i-clock"/></svg><span>Schedule</span></button>
+        <button class="nav-item" data-page="qualifications"><svg><use href="#i-users"/></svg><span>Qualifications</span></button>
+        <button class="nav-item" data-page="messages"><svg><use href="#i-radio"/></svg><span>Messages</span><b id="nav-message-count">0</b></button>
+        <button class="nav-item" data-page="activity"><svg><use href="#i-clock"/></svg><span>Activity</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="nav-item" data-page="settings"><svg><use href="#i-settings"/></svg><span>Settings</span></button>
+        <button class="nav-item" data-page="about"><svg><use href="#i-alert"/></svg><span>About &amp; Licenses</span></button>
+        <button class="nav-item quit-item" id="quit-application" type="button"><svg><use href="#i-power"/></svg><span>Quit Tickets Local</span></button>
+        <div class="local-status">
+          <span class="status-dot"></span>
+          <div><strong>Local only</strong><small>This computer</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menu-button" aria-label="Open navigation"><svg><use href="#i-menu"/></svg></button>
+        <div class="page-identity">
+          <h1 id="page-title">Situation</h1>
+          <span id="organization-name">Tickets Local</span>
+        </div>
+        <div class="top-actions">
+          <label class="search-box">
+            <svg><use href="#i-search"/></svg>
+            <input id="global-search" type="search" placeholder="Search…" autocomplete="off">
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="sync-state" id="sync-state"><span></span> Live</div>
+          <button class="icon-button" id="theme-button" aria-label="Toggle theme"><svg><use href="#i-sun"/></svg></button>
+          <button class="primary-button" id="new-incident-button"><svg><use href="#i-plus"/></svg>New incident</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="page active" data-page-view="dashboard">
+          <div class="welcome-row">
+            <div>
+              <p class="eyebrow">OPERATIONS OVERVIEW</p>
+              <h2>Current situation</h2>
+              <p id="situation-summary">No active incidents. System ready.</p>
+            </div>
+            <time id="current-time"></time>
+          </div>
+
+          <aside class="incident-update-alert" id="incident-update-alert" hidden aria-live="polite">
+            <span class="alert-pulse" aria-hidden="true"></span>
+            <div class="incident-update-alert-copy">
+              <strong id="incident-update-alert-title">Incidents need an update</strong>
+              <small id="incident-update-alert-detail"></small>
+            </div>
+            <div class="incident-update-alert-items" id="incident-update-alert-items"></div>
+          </aside>
+
+          <div class="stat-grid">
+            <article class="stat-card critical-accent">
+              <div><span>Active incidents</span><strong id="stat-active">0</strong></div>
+              <svg><use href="#i-alert"/></svg>
+              <small id="stat-critical">0 critical priority</small>
+            </article>
+            <article class="stat-card blue-accent">
+              <div><span>Units available</span><strong id="stat-available">0</strong></div>
+              <svg><use href="#i-users"/></svg>
+              <small id="stat-units">0 total responders</small>
+            </article>
+            <article class="stat-card green-accent">
+              <div><span>Facilities open</span><strong id="stat-facilities">0</strong></div>
+              <svg><use href="#i-building"/></svg>
+              <small id="stat-capacity">No capacity reported</small>
+            </article>
+            <article class="stat-card amber-accent">
+              <div><span>Longest active</span><strong id="stat-oldest">—</strong></div>
+              <svg><use href="#i-clock"/></svg>
+              <small>Since incident creation</small>
+            </article>
+          </div>
+
+          <div class="awareness-strip" aria-label="Secondary operational feeds">
+          <article class="panel aprs-dashboard-panel secondary-status-panel" data-secondary-panel="aprs">
+            <header class="panel-header">
+              <div><p class="eyebrow">LIVE POSITION FEEDS</p><h3>APRS connection status</h3></div>
+              <div class="secondary-status-actions"><span class="aprs-state" id="dashboard-aprs-state">Off</span><button type="button" class="text-button" data-toggle-secondary="aprs" aria-expanded="false">Details</button></div>
+            </header>
+            <div class="aprs-dashboard-body">
+              <div class="aprs-health-summary">
+                <div class="aprs-health-icon"><svg><use href="#i-radio"/></svg></div>
+                <div><strong id="dashboard-aprs-message">APRS tracking is off</strong><small id="dashboard-aprs-server">Enable APRS under Settings to begin receiving.</small></div>
+              </div>
+              <div class="aprs-metrics">
+                <div><span>Last Internet packet</span><strong id="dashboard-aprs-last-packet">Never</strong></div>
+                <div><span>Internet packets</span><strong id="dashboard-aprs-packets">0</strong></div>
+                <div><span>Last local RF packet</span><strong id="dashboard-aprs-local-last-packet">Never</strong></div>
+                <div><span>Local RF packets</span><strong id="dashboard-aprs-local-packets">0</strong></div>
+                <div><span>Positions decoded</span><strong id="dashboard-aprs-decoded">0</strong></div>
+                <div><span>Responder updates</span><strong id="dashboard-aprs-updates">0</strong></div>
+                <div><span>Nearby stations</span><strong id="dashboard-aprs-area">Off</strong></div>
+                <div><span>Local iGate</span><strong id="dashboard-aprs-igate">Off</strong></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel weather-dashboard-panel secondary-status-panel" data-secondary-panel="weather">
+            <header class="panel-header">
+              <div><p class="eyebrow">WEATHER AWARENESS</p><h3>National Weather Service alerts</h3></div>
+              <div class="secondary-status-actions"><span class="aprs-state" id="dashboard-weather-state">Off</span><button type="button" class="text-button" data-toggle-secondary="weather" aria-expanded="false">Details</button></div>
+            </header>
+            <div class="weather-dashboard-body">
+              <div class="aprs-health-summary">
+                <div class="aprs-health-icon weather-icon"><svg><use href="#i-alert"/></svg></div>
+                <div><strong id="dashboard-weather-message">Weather awareness is off</strong><small id="dashboard-weather-updated">Enable it under Settings to monitor the configured map home.</small></div>
+              </div>
+              <div class="weather-alert-list" id="dashboard-weather-alerts"></div>
+              <div class="current-weather" id="dashboard-current-weather" hidden></div>
+            </div>
+          </article>
+
+          <article class="panel weather-dashboard-panel secondary-status-panel" data-secondary-panel="water">
+            <header class="panel-header">
+              <div><p class="eyebrow">WATER CONDITIONS</p><h3>River and stream gauges</h3></div>
+              <div class="secondary-status-actions"><span class="aprs-state" id="dashboard-water-state">Off</span><button type="button" class="text-button" data-toggle-secondary="water" aria-expanded="false">Details</button></div>
+            </header>
+            <div class="weather-dashboard-body">
+              <div class="aprs-health-summary"><div class="aprs-health-icon weather-icon"><svg><use href="#i-location"/></svg></div><div><strong id="dashboard-water-message">Water monitoring is off</strong><small id="dashboard-water-updated">Configure gauge IDs under Settings.</small></div></div>
+              <div class="water-gauge-list" id="dashboard-water-gauges"></div>
+            </div>
+          </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel incident-panel">
+              <header class="panel-header">
+                <div><p class="eyebrow">DISPATCH QUEUE</p><h3>Active incidents</h3></div>
+                <button class="text-button" data-go-page="incidents">View all</button>
+              </header>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Incident</th><th>Location</th><th>Status</th><th>Assigned</th><th>Elapsed</th></tr></thead>
+                  <tbody id="dashboard-incidents"></tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="dashboard-empty">
+                <div class="empty-icon"><svg><use href="#i-alert"/></svg></div>
+                <h4>No active incidents</h4>
+                <p>The dispatch queue is clear.</p>
+                <button class="secondary-button" data-new-incident>Create the first incident</button>
+              </div>
+            </article>
+
+            <article class="panel responders-panel">
+              <header class="panel-header">
+                <div><p class="eyebrow">RESOURCE BOARD</p><h3>Responder status</h3></div>
+                <div class="resource-board-actions">
+                  <button class="text-button" type="button" id="resource-tabs-toggle">Group by type</button>
+                  <button class="icon-button small" id="add-responder-dashboard" aria-label="Add responder"><svg><use href="#i-plus"/></svg></button>
+                </div>
+              </header>
+              <div class="resource-tabs" id="dashboard-resource-tabs" hidden></div>
+              <div class="responder-list" id="dashboard-responders"></div>
+            </article>
+
+            <article class="panel map-panel" id="situation-map-panel">
+              <header class="panel-header">
+                <div><p class="eyebrow">COMMON OPERATING PICTURE</p><h3>Situation map</h3></div>
+                <div class="map-header-actions">
+                  <label class="map-position-control">Map position<select data-map-position aria-label="Map position on Situation page"><option value="top">Top — below summary</option><option value="higher">Higher — below overview cards</option><option value="standard">Standard — below dispatch and resources</option></select></label>
+                  <span class="online-label" id="map-status">OpenStreetMap</span>
+                  <a class="secondary-button map-window-button" data-map-window href="/?view=map" target="tickets-local-situation-map">Open full-screen map</a>
+                  <button type="button" class="secondary-button map-fullscreen-button" data-map-fullscreen>Full screen</button>
+                  <button type="button" class="secondary-button map-close-button" data-map-close>Close window</button>
+                  <button type="button" class="secondary-button map-expand-button" data-map-expand aria-label="Expand map" aria-pressed="false"><span data-map-expand-label>Expand map</span></button>
+                </div>
+              </header>
+              <div class="map" id="situation-map" tabindex="0" aria-label="Situation map. Drag to move; scroll or use the controls to zoom.">
+                <div class="map-tiles"></div>
+                <img class="map-radar" alt="" hidden>
+                <svg class="map-trails" aria-hidden="true"></svg>
+                <div class="map-markers"></div>
+                <div class="map-grid-fallback"></div>
+                <div class="map-controls">
+                  <button type="button" data-map-zoom="in" aria-label="Zoom in">+</button>
+                  <button type="button" data-map-zoom="out" aria-label="Zoom out">−</button>
+                  <button type="button" data-map-fit aria-label="Fit visible objects" title="Fit visible objects">◎</button>
+                  <button type="button" data-map-home aria-label="Reset map view">⌂</button>
+                  <button type="button" data-radar-play aria-label="Pause radar animation" title="Pause radar animation" hidden>Ⅱ</button>
+                  <button type="button" data-map-expand aria-label="Expand map" aria-pressed="false"><span data-map-expand-glyph aria-hidden="true">⛶</span></button>
+                </div>
+                <div class="map-drawing-control">
+                  <button type="button" class="secondary-button" data-map-draw-toggle>Draw</button>
+                  <button type="button" class="secondary-button" data-map-route-start>Route</button>
+                  <button type="button" class="secondary-button" data-map-manage-overlays>Manage drawings</button>
+                  <button type="button" class="secondary-button" data-map-route-clear hidden>Clear route</button>
+                  <span class="map-route-status" data-map-route-status hidden></span>
+                  <div class="map-drawing-editor" hidden>
+                    <select data-map-draw-type aria-label="Drawing type"><option value="point">Marker</option><option value="line">Line</option><option value="polygon">Area</option></select>
+                    <input data-map-draw-name maxlength="160" value="Map annotation" aria-label="Drawing name">
+                    <input data-map-draw-color type="color" value="#f97316" aria-label="Drawing color">
+                    <button type="button" data-map-draw-start>Start</button>
+                    <button type="button" data-map-draw-undo disabled>Undo</button>
+                    <button type="button" data-map-draw-save disabled>Save</button>
+                    <button type="button" data-map-draw-cancel>Cancel</button>
+                    <small data-map-draw-help>Select Start, then click the map.</small>
+                  </div>
+                </div>
+                <details class="map-layer-control">
+                  <summary>Layers</summary>
+                  <div>
+                    <label><input type="checkbox" data-map-layer="radar" checked> Radar</label>
+                    <label><input type="checkbox" data-map-layer="alerts" checked> Weather alerts</label>
+                    <label><input type="checkbox" data-map-layer="incident" checked> Incidents</label>
+                    <label><input type="checkbox" data-map-layer="responder" checked> Responders</label>
+                    <label><input type="checkbox" data-map-layer="facility" checked> Facilities</label>
+                    <label><input type="checkbox" data-map-layer="location" checked> Saved locations</label>
+                    <label><input type="checkbox" data-map-layer="aprs" checked> Nearby APRS</label>
+                    <label><input type="checkbox" data-map-layer="water" checked> Water gauges</label>
+                    <label><input type="checkbox" data-map-layer="storm" checked> Storm reports</label>
+                    <label><input type="checkbox" data-map-layer="infrastructure" checked> Infrastructure</label>
+                    <label><input type="checkbox" data-map-layer="amateur_repeater" checked> Amateur repeaters</label>
+                    <label><input type="checkbox" data-map-layer="gmrs_repeater" checked> GMRS repeaters</label>
+                    <label><input type="checkbox" data-map-layer="meshcore" checked> MeshCore nodes</label>
+                    <label><input type="checkbox" data-map-layer="sensor" checked> Local sensors</label>
+                  </div>
+                </details>
+                <div class="map-radar-status" data-map-radar-status hidden></div>
+                <div class="map-weather-badge" id="map-weather-badge" hidden></div>
+                <div class="map-hint" data-map-hint>Drag to move · Scroll to zoom · Double-click to zoom</div>
+                <div class="map-unmapped" id="map-unmapped" hidden></div>
+                <a class="map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors · ODbL</a>
+              </div>
+            </article>
+
+            <article class="panel activity-panel">
+              <header class="panel-header">
+                <div><p class="eyebrow">AUDIT TRAIL</p><h3>Recent activity</h3></div>
+                <button class="text-button" data-go-page="activity">Full log</button>
+              </header>
+              <div class="activity-list compact" id="dashboard-activity"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" data-page-view="incidents">
+          <div class="section-heading">
+            <div><p class="eyebrow">INCIDENT MANAGEMENT</p><h2>Incidents</h2><p>Track the complete dispatch lifecycle and unit assignments.</p></div>
+            <button class="primary-button" data-new-incident><svg><use href="#i-plus"/></svg>New incident</button>
+          </div>
+          <div class="filter-bar">
+            <div class="segmented" id="incident-status-filter">
+              <button class="active" data-filter="active">Active</button>
+              <button data-filter="all">All</button>
+              <button data-filter="closed">Closed</button>
+            </div>
+            <label class="inline-filter">Severity
+              <select id="incident-severity-filter"><option value="">All priorities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+            </label>
+          </div>
+          <article class="panel">
+            <div class="table-wrap">
+              <table class="full-table">
+                <thead><tr><th>#</th><th>Priority</th><th>Incident</th><th>Location</th><th>Status</th><th>Units</th><th>Created</th><th></th></tr></thead>
+                <tbody id="incidents-table"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="incidents-empty"><div class="empty-icon"><svg><use href="#i-alert"/></svg></div><h4>No incidents match this view</h4><p>Adjust the filters or create a new incident.</p></div>
+          </article>
+        </section>
+
+        <section class="page" data-page-view="responders">
+          <div class="section-heading">
+            <div><p class="eyebrow">UNITS &amp; PERSONNEL</p><h2>Responders</h2><p>Availability, capabilities, and current dispatch state.</p></div>
+            <div class="resource-board-actions">
+              <button class="secondary-button" type="button" id="responders-tabs-toggle">Group by type</button>
+              <button class="primary-button" id="add-responder"><svg><use href="#i-plus"/></svg>Add responder</button>
+            </div>
+          </div>
+          <div class="resource-tabs responder-page-tabs" id="responders-resource-tabs" hidden></div>
+          <div class="responder-board" id="responders-board"></div>
+          <div class="empty-state standalone" id="responders-empty"><div class="empty-icon"><svg><use href="#i-users"/></svg></div><h4>No responders configured</h4><p>Add units or personnel before assigning an incident.</p><button class="secondary-button" data-add-responder>Add responder</button></div>
+        </section>
+
+        <section class="page" data-page-view="facilities">
+          <div class="section-heading">
+            <div><p class="eyebrow">DESTINATIONS &amp; SUPPORT</p><h2>Facilities</h2><p>Operational status and available capacity.</p></div>
+            <button class="primary-button" id="add-facility"><svg><use href="#i-plus"/></svg>Add facility</button>
+          </div>
+          <div class="facility-grid" id="facilities-grid"></div>
+          <div class="empty-state standalone" id="facilities-empty"><div class="empty-icon"><svg><use href="#i-building"/></svg></div><h4>No facilities configured</h4><p>Add hospitals, shelters, stations, or staging areas.</p><button class="secondary-button" data-add-facility>Add facility</button></div>
+        </section>
+
+        <section class="page" data-page-view="locations">
+          <div class="section-heading">
+            <div><p class="eyebrow">SAVED PLACES</p><h2>Locations</h2><p>Keep reusable addresses, landmarks, command posts, and access points on the map.</p></div>
+            <button class="primary-button" id="add-location"><svg><use href="#i-plus"/></svg>Add location</button>
+          </div>
+          <div class="location-grid" id="locations-grid"></div>
+          <div class="empty-state standalone" id="locations-empty"><div class="empty-icon"><svg><use href="#i-map-pin"/></svg></div><h4>No saved locations</h4><p>Add frequently used places so they remain available on the situation map.</p><button class="secondary-button" data-add-location>Add location</button></div>
+        </section>
+
+        <section class="page" data-page-view="assets">
+          <div class="section-heading">
+            <div><p class="eyebrow">LOGISTICS &amp; READINESS</p><h2>Vehicles and equipment</h2><p>Track readiness, quantity, location, custody, and maintenance.</p></div>
+            <button class="primary-button" id="add-asset"><svg><use href="#i-plus"/></svg>Add asset</button>
+          </div>
+          <div class="location-grid" id="assets-grid"></div>
+          <div class="empty-state standalone" id="assets-empty"><div class="empty-icon"><svg><use href="#i-building"/></svg></div><h4>No vehicles or equipment</h4><p>Add deployable vehicles, radios, generators, medical kits, or other resources.</p><button class="secondary-button" data-add-asset>Add asset</button></div>
+        </section>
+
+        <section class="page" data-page-view="schedule">
+          <div class="section-heading">
+            <div><p class="eyebrow">OPERATIONAL CALENDAR</p><h2>Schedule</h2><p>Coordinate shifts, exercises, training, maintenance, meetings, and other planned work.</p></div>
+            <button class="primary-button" id="add-schedule-item"><svg><use href="#i-plus"/></svg>Add item</button>
+          </div>
+          <div class="schedule-list" id="schedule-list"></div>
+          <div class="empty-state standalone" id="schedule-empty"><div class="empty-icon"><svg><use href="#i-clock"/></svg></div><h4>No scheduled work</h4><p>Add a shift, exercise, training event, maintenance window, or meeting.</p><button class="secondary-button" data-add-schedule-item>Add scheduled item</button></div>
+        </section>
+
+        <section class="page" data-page-view="qualifications">
+          <div class="section-heading">
+            <div><p class="eyebrow">PERSONNEL READINESS</p><h2>Qualifications</h2><p>Track responder certifications, courses, licenses, exercises, and expiration dates.</p></div>
+            <button class="primary-button" id="add-qualification"><svg><use href="#i-plus"/></svg>Add qualification</button>
+          </div>
+          <div class="qualification-summary" id="qualification-summary"></div>
+          <div class="location-grid" id="qualifications-grid"></div>
+          <div class="empty-state standalone" id="qualifications-empty"><div class="empty-icon"><svg><use href="#i-users"/></svg></div><h4>No qualifications recorded</h4><p>Add training, certifications, licenses, and exercise participation for responders.</p><button class="secondary-button" data-add-qualification>Add qualification</button></div>
+        </section>
+
+        <section class="page" data-page-view="messages">
+          <div class="section-heading">
+            <div><p class="eyebrow">LOCAL OPERATIONS TRAFFIC</p><h2>Messages</h2><p>Share concise operational updates across Standalone or authenticated LAN clients.</p></div>
+          </div>
+          <div class="message-layout">
+            <form class="panel message-composer" id="message-form">
+              <header class="panel-header"><div><h3>Post message</h3><p>Messages remain inside Tickets Local and are never sent to external services.</p></div></header>
+              <div class="settings-body">
+                <div class="form-row two"><label>Channel<select name="channel"><option value="general">General</option><option value="command">Command</option><option value="operations">Operations</option><option value="logistics">Logistics</option><option value="medical">Medical coordination</option></select></label><label>Author / call sign<input name="author" maxlength="100" placeholder="Optional"></label></div>
+                <label>Related incident<select name="incident_id"><option value="">No incident</option></select></label>
+                <label>Message<textarea name="body" rows="5" maxlength="5000" required placeholder="Operational update…"></textarea></label>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Post message</button></div>
+            </form>
+            <article class="panel message-feed-panel"><header class="panel-header"><div><h3>Message traffic</h3><p>Newest first · append-only</p></div><select id="message-channel-filter" aria-label="Filter messages"><option value="all">All channels</option><option value="general">General</option><option value="command">Command</option><option value="operations">Operations</option><option value="logistics">Logistics</option><option value="medical">Medical coordination</option></select></header><div class="message-feed" id="message-feed"></div><div class="empty-state" id="messages-empty"><div class="empty-icon"><svg><use href="#i-radio"/></svg></div><h4>No messages</h4><p>Operational messages will appear here.</p></div></article>
+          </div>
+        </section>
+
+        <section class="page" data-page-view="activity">
+          <div class="section-heading">
+            <div><p class="eyebrow">APPEND-ONLY RECORD</p><h2>Activity log</h2><p>Operational changes recorded by the local event store.</p></div>
+            <a class="secondary-button link-button" href="/api/backup"><svg><use href="#i-download"/></svg>Download backup</a>
+          </div>
+          <article class="panel activity-log-panel"><div class="activity-list" id="full-activity"></div><div class="empty-state" id="activity-empty"><div class="empty-icon"><svg><use href="#i-clock"/></svg></div><h4>No activity yet</h4><p>Saved operational changes will appear here.</p></div></article>
+        </section>
+
+        <section class="page" data-page-view="settings">
+          <div class="section-heading">
+            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.6</span>
+          </div>
+          <div class="settings-grid">
+            <form class="panel network-settings" id="network-settings-form">
+              <header class="panel-header">
+                <div><p class="eyebrow">MULTI-COMPUTER LAN</p><h3>Shared operations</h3><p>Run independently, host the authoritative data, or connect this installation to a host.</p></div>
+                <span class="aprs-state" id="network-state">Standalone</span>
+              </header>
+              <div class="settings-body">
+                <div class="form-row two">
+                  <label>Computer role
+                    <select name="mode">
+                      <option value="standalone">Standalone — this computer only</option>
+                      <option value="host">Host — share this computer’s data</option>
+                      <option value="client">Client — use another computer’s data</option>
+                    </select>
+                    <small class="field-help">Use exactly one Host. Client computers read and write the Host’s authoritative event log.</small>
+                  </label>
+                  <label>LAN service port
+                    <input name="listen_port" type="number" min="1024" max="65535" required>
+                    <small class="field-help">The default is 8787. Use the same port in the Client host address.</small>
+                  </label>
+                </div>
+                <div class="network-role-section" data-network-host>
+                  <label>LAN access key
+                    <div class="input-action-row"><input name="access_key" maxlength="128" autocomplete="off"><button class="secondary-button" id="network-copy-key" type="button">Copy key</button></div>
+                    <small class="field-help">Give this key only to computers that should read and change operational data. Authenticated Clients are accepted automatically; there is no per-connection approval.</small>
+                  </label>
+                  <div class="network-actions"><button class="text-button" id="network-regenerate-key" type="button">Generate a new access key</button></div>
+                  <div class="network-actions"><button class="secondary-button" id="network-refresh-addresses" type="button">Refresh host addresses</button></div>
+                  <div class="network-addresses" id="network-host-addresses"></div>
+                </div>
+                <div class="network-role-section" data-network-client>
+                  <label>Host address
+                    <input name="host_url" maxlength="300" placeholder="http://192.168.1.50:8787">
+                    <small class="field-help">Copy one of the Host’s displayed LAN addresses. The Host must remain running.</small>
+                  </label>
+                  <label>Host access key
+                    <input name="client_access_key" type="password" maxlength="128" autocomplete="off">
+                  </label>
+                  <div class="network-actions"><button class="secondary-button" id="network-test-connection" type="button">Test &amp; save connection</button></div>
+                </div>
+                <div class="network-runtime" id="network-runtime"></div>
+                <section class="connection-tester" aria-labelledby="connection-tester-title">
+                  <div class="connection-tester-heading"><div><strong id="connection-tester-title">Automatic connection tester</strong><small>Checks LAN computers and enabled external services. Disabled is not a failure.</small></div><button class="secondary-button" id="connection-test-now" type="button">Test now</button></div>
+                  <div class="connection-summary" id="connection-summary">Waiting for the first automatic check…</div>
+                  <div class="connection-check-list" id="connection-check-list"></div>
+                </section>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save network settings</button><button class="secondary-button" id="network-quit-apply" type="button" hidden>Quit to apply</button></div>
+            </form>
+            <form class="panel settings-form" id="settings-form">
+              <header class="panel-header"><div><h3>Organization &amp; map home</h3><p>Set the default map view by searching for an address or place.</p></div></header>
+              <label>Organization name<input name="organization" maxlength="100" required></label>
+              <label>Incident update alert after (minutes)<input name="incident_stale_minutes" type="number" min="1" max="1440" required><small class="field-help">Active incidents are highlighted if no change or note has been saved within this interval. The default is 10 minutes.</small></label>
+              <div class="settings-address">
+                <div class="form-section-heading"><label for="center-address">Map center address or place</label><button type="button" class="text-button" id="center-geocode-button"><svg><use href="#i-map-pin"/></svg>Find on map</button></div>
+                <input id="center-address" name="center_address" maxlength="300" placeholder="Emergency operations center, city, or street address">
+                <div id="center-geocode-results" class="geocode-results"></div>
+              </div>
+              <div class="form-row three">
+                <label>Resolved latitude<input name="center_lat" type="number" min="-90" max="90" step="any" required></label>
+                <label>Resolved longitude<input name="center_lon" type="number" min="-180" max="180" step="any" required></label>
+                <label>Default zoom<input name="default_zoom" type="number" min="2" max="18" required></label>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save settings</button></div>
+            </form>
+            <article class="panel map-pack-settings">
+              <header class="panel-header"><div><p class="eyebrow">OFFLINE MAPS</p><h3>Map packs</h3><p>Save base-map tiles around the configured map home for disconnected operations.</p></div></header>
+              <form id="map-pack-form" class="map-pack-form">
+                <label>Pack name<input name="name" maxlength="100" value="Operating area" required></label>
+                <label>Radius (miles)<input name="radius_miles" type="number" min="1" max="100" value="15" required></label>
+                <label>Minimum zoom<input name="min_zoom" type="number" min="2" max="16" value="8" required></label>
+                <label>Maximum zoom<input name="max_zoom" type="number" min="2" max="16" value="13" required></label>
+                <button class="secondary-button" type="submit">Download map pack</button>
+              </form>
+              <div class="map-pack-progress" id="map-pack-progress">Maps viewed in Tickets Local are cached automatically. Saved packs preload an entire operating area.</div>
+              <div class="overlay-list" id="map-pack-list"></div>
+            </article>
+            <article class="panel overlay-settings" id="overlay-settings">
+              <header class="panel-header"><div><p class="eyebrow">ROUTES &amp; BOUNDARIES</p><h3>KML map overlays</h3><p>Import routes, polygons, tracks, or points from a .kml file.</p></div></header>
+              <form id="overlay-import-form" class="overlay-import">
+                <label>KML file<input name="file" type="file" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml" required><small class="field-help">Maximum 5 MB, 2,000 features, and 50,000 coordinates. KMZ files are not supported.</small></label>
+                <label>Overlay name<input name="name" maxlength="160" placeholder="Optional; uses the KML document name"></label>
+                <label>Color<input name="color" type="color" value="#a78bfa"></label>
+                <button class="secondary-button" type="submit">Import KML</button>
+              </form>
+              <div class="overlay-list" id="overlay-list"></div>
+            </article>
+            <form class="panel weather-settings" id="weather-settings-form">
+              <header class="panel-header">
+                <div><p class="eyebrow">ONLINE + CACHED</p><h3>Weather awareness</h3><p>Monitor active National Weather Service alerts at the configured map home.</p></div>
+                <span class="aprs-state" id="weather-state">Off</span>
+              </header>
+              <div class="settings-body">
+                <label class="toggle-row">
+                  <input name="enabled" type="checkbox">
+                  <span><strong>Enable weather awareness</strong><small>The authoritative Host fetches and caches alerts; Client computers reuse its results.</small></span>
+                </label>
+                <label>Refresh interval (minutes)<input name="refresh_minutes" type="number" min="2" max="60" required><small class="field-help">A five-minute interval is recommended. Cached results remain visible and are clearly marked stale if the provider is unreachable.</small></label>
+                <label class="toggle-row">
+                  <input name="radar_enabled" type="checkbox">
+                  <span><strong>Show weather radar on maps</strong><small>The Host fetches NOAA radar imagery so Client computers do not contact the provider directly.</small></span>
+                </label>
+                <label>Radar opacity (%)<input name="radar_opacity" type="number" min="10" max="90" required><small class="field-help">Adjust how strongly precipitation appears over the base map.</small></label>
+                <label class="toggle-row">
+                  <input name="radar_animation" type="checkbox">
+                  <span><strong>Animate recent radar</strong><small>Available for a configured time-aware local radar source. The public NOAA mosaic provides one current frame.</small></span>
+                </label>
+                <label>Animation frames<input name="radar_frames" type="number" min="2" max="6" required><small class="field-help">Two to six frames. Fewer frames use less Host memory and mesh bandwidth.</small></label>
+                <label>Local alert source URL<input name="alerts_url" type="url" maxlength="1000" placeholder="Leave blank for the National Weather Service"><small class="field-help">Optional GeoJSON-compatible alert endpoint on an AREDN or trusted local network. The Host adds the configured map point and status parameters.</small></label>
+                <label>Local radar source URL<input name="radar_url" type="url" maxlength="1000" placeholder="Leave blank for NOAA radar"><small class="field-help">Optional ArcGIS MapServer export endpoint. Credentials are not permitted in the URL.</small></label>
+                <div class="weather-runtime" id="weather-runtime">Weather status has not loaded yet.</div>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save weather settings</button></div>
+            </form>
+            <form class="panel weather-settings" id="water-settings-form">
+              <header class="panel-header"><div><p class="eyebrow">ONLINE + CACHED</p><h3>Water conditions</h3><p>Monitor selected river and stream gauges through the authoritative Host.</p></div><span class="aprs-state" id="water-state">Off</span></header>
+              <div class="settings-body">
+                <label class="toggle-row"><input name="enabled" type="checkbox"><span><strong>Enable water monitoring</strong><small>Gauge readings remain cached if the provider or mesh link becomes unavailable.</small></span></label>
+                <label>Selected USGS gauges<textarea name="site_ids" rows="3" maxlength="600" placeholder="Use Find nearby gauges below"></textarea><small class="field-help">Selected station IDs are saved here. Manual entry remains available for known IDs.</small></label>
+                <section class="gauge-finder" aria-labelledby="gauge-finder-title">
+                  <div><strong id="gauge-finder-title">Find nearby gauges</strong><small>Searches active stream gauges by name and distance. Clicking Find gauges sends the configured map-home coordinates and radius to the public USGS service.</small></div>
+                  <div class="gauge-finder-controls"><label>Within <select id="water-site-radius"><option value="25">25 miles</option><option value="50" selected>50 miles</option><option value="100">100 miles</option><option value="200">200 miles</option></select></label><button class="secondary-button" type="button" id="water-site-search">Find gauges</button></div>
+                  <div class="gauge-site-results" id="water-site-results"><span>Search to see station names and distances—no gauge IDs required.</span></div>
+                  <button class="secondary-button" type="button" id="water-site-add" hidden>Add selected gauges</button>
+                </section>
+                <label>Refresh interval (minutes)<input name="refresh_minutes" type="number" min="5" max="120" required></label>
+                <label>Local water source URL<input name="source_url" type="url" maxlength="1000" placeholder="Leave blank for USGS"><small class="field-help">Optional WaterML JSON-compatible endpoint on a trusted AREDN network.</small></label>
+                <label class="toggle-row"><input name="noaa_enabled" type="checkbox"><span><strong>Add NOAA flood forecasts</strong><small>Enriches up to ten configured gauges with flood categories, flood stage, and forecast crest.</small></span></label>
+                <label>Local NOAA-compatible URL<input name="noaa_url" type="url" maxlength="1000" placeholder="Leave blank for NOAA NWPS"><small class="field-help">Optional NWPS-compatible gauge base URL on a trusted network.</small></label>
+                <div class="weather-runtime" id="water-runtime">Water status has not loaded yet.</div>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save water settings</button></div>
+            </form>
+            <form class="panel aprs-settings" id="aprs-settings-form">
+              <header class="panel-header">
+                <div><p class="eyebrow">INTERNET + LOCAL RADIO</p><h3>APRS tracking</h3><p>Choose APRS-IS, local RF reception, or both. Internet-only remains the default.</p></div>
+                <span class="aprs-state" id="aprs-state">Off</span>
+              </header>
+              <div class="settings-body">
+                <label class="toggle-row">
+                  <input name="enabled" type="checkbox">
+                  <span><strong>Enable APRS tracking</strong><small>Only the connection sources selected below will run.</small></span>
+                </label>
+                <label>Connection mode
+                  <select name="mode">
+                    <option value="internet">Internet only</option>
+                    <option value="local">Local RF only</option>
+                    <option value="hybrid">Hybrid — Internet + local RF</option>
+                  </select>
+                  <small class="field-help">Internet only needs no radio interface. Hybrid merges both feeds and suppresses duplicate packets.</small>
+                </label>
+                <div class="aprs-source-section" data-aprs-internet>
+                  <div class="aprs-source-heading"><strong>APRS-IS Internet connection</strong><span class="aprs-state" id="aprs-internet-state">Off</span></div>
+                  <div class="form-row three">
+                    <label>APRS-IS login callsign<input name="login_callsign" maxlength="9" placeholder="N0CALL-10"></label>
+                    <label>APRS-IS passcode<input name="passcode" type="password" inputmode="numeric" pattern="[0-9]{1,5}" maxlength="5" autocomplete="off" placeholder="Required"><small class="field-help" id="aprs-passcode-help">Stored separately from backups on the active data host.</small></label>
+                    <label>Server<input name="server" maxlength="160" placeholder="rotate.aprs2.net:14580"></label>
+                  </div>
+                  <label>Additional server filter<input name="extra_filter" maxlength="300" placeholder="Optional, for example r/35/-86/50"><small class="field-help">Tracked responder callsigns are added automatically as a buddy-list filter.</small></label>
+                  <label class="toggle-row">
+                    <input name="area_enabled" type="checkbox">
+                    <span><strong>Show nearby APRS-IS activity on the map</strong><small>Adds a server range filter centered on the Situation map home. It does not reduce delivery of tracked responders outside that area.</small></span>
+                  </label>
+                </div>
+                <div class="aprs-source-section" data-aprs-local>
+                  <div class="aprs-source-heading"><strong>Local radio receiver</strong><span class="aprs-state" id="aprs-local-state">Off</span></div>
+                  <div class="form-row two">
+                    <label>Local decoder
+                      <select name="local_decoder">
+                        <option value="bundled">Built-in Dire Wolf</option>
+                        <option value="kiss_tcp">Existing Dire Wolf / KISS TCP TNC</option>
+                      </select>
+                    </label>
+                    <label data-local-kiss-address>KISS TCP address<input name="local_kiss_address" maxlength="160" placeholder="127.0.0.1:8001"><small class="field-help">Used for an already-running Dire Wolf or hardware/software KISS TNC.</small></label>
+                  </div>
+                  <div class="local-rf-audio-setup" data-local-audio-device>
+                    <div class="local-rf-audio-heading">
+                      <div><strong>Radio audio setup</strong><small>Connect the radio interface first, then detect and select its audio devices.</small></div>
+                      <button class="secondary-button" id="aprs-detect-audio" type="button">Detect audio devices</button>
+                    </div>
+                    <div class="form-row two">
+                      <label>Radio audio input
+                        <select name="local_audio_device">
+                          <option value="">Detect audio devices…</option>
+                        </select>
+                        <small class="field-help">Choose the sound input connected to the radio’s speaker/data output.</small>
+                      </label>
+                      <label>Audio output
+                        <select name="local_audio_output_device">
+                          <option value="">Detect audio devices…</option>
+                        </select>
+                        <small class="field-help">Required by Dire Wolf. Choose the radio interface output when available, otherwise the Mac’s normal output.</small>
+                      </label>
+                    </div>
+                    <div class="audio-device-results" id="aprs-audio-device-results">No device scan has run yet.</div>
+                  </div>
+                  <label class="toggle-row">
+                    <input name="local_show_all" type="checkbox">
+                    <span><strong>Show all locally heard APRS positions</strong><small>Displays position packets decoded directly from the radio, even when the callsign is not a tracked responder.</small></span>
+                  </label>
+                  <label class="toggle-row" data-local-igate>
+                    <input name="local_igate_enabled" type="checkbox">
+                    <span><strong>Gate locally heard RF packets to APRS-IS</strong><small>Built-in Dire Wolf forwards eligible RF packets using the verified callsign and passcode. Internet-to-radio transmission and digipeating remain disabled.</small></span>
+                  </label>
+                </div>
+                <div class="form-row two">
+                  <label>Position stale after (minutes)<input name="stale_minutes" type="number" min="1" max="1440" required></label>
+                  <label>Map trail history (hours)<input name="trail_hours" type="number" min="1" max="168" required></label>
+                </div>
+                <label>Nearby activity radius (miles)<input name="area_radius_miles" type="number" min="1" max="250" required><small class="field-help">Uses the map center configured above. The server range filter is converted to kilometers automatically.</small></label>
+                <div class="aprs-runtime" id="aprs-runtime"></div>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save &amp; apply APRS settings</button><button class="secondary-button" id="aprs-reconnect" type="button">Restart APRS</button></div>
+            </form>
+            <form class="panel weather-settings" id="integration-settings-form">
+              <header class="panel-header"><div><p class="eyebrow">RADIO + LOCAL FEEDS</p><h3>Operational integrations</h3><p>Read-only storm, road, repeater, MeshCore, AREDN, and sensor sources owned by the Host.</p></div><span class="aprs-state" id="integration-state">Off</span></header>
+              <div class="settings-body">
+                <label class="toggle-row"><input name="enabled" type="checkbox"><span><strong>Enable operational feeds</strong><small>Core CAD remains available if every configured source is offline.</small></span></label>
+                <label>Refresh interval (minutes)<input name="refresh_minutes" type="number" min="1" max="120" required></label>
+                <label>Storm report GeoJSON URL<input name="storm_reports_url" type="url" maxlength="1000" placeholder="https://…/reports.geojson"></label>
+                <label>Road/infrastructure GeoJSON URL<input name="infrastructure_url" type="url" maxlength="1000" placeholder="http://mesh-node.local/closures.geojson"></label>
+                <label>Amateur repeater GeoJSON URL<input name="amateur_repeaters_url" type="url" maxlength="1000" placeholder="http://local-server/repeaters-amateur.geojson"><small class="field-help">Use an authorized database export; callsign, frequency, offset, tone, mode, and access fields are shown on the map.</small></label>
+                <label class="toggle-row"><input name="amateur_osm_enabled" type="checkbox"><span><strong>Find open amateur repeaters through OpenStreetMap</strong><small>Sends the configured map-center coordinates to the public Overpass API and searches within 100 miles. A configured GeoJSON URL takes precedence.</small></span></label>
+                <label>GMRS repeater GeoJSON URL<input name="gmrs_repeaters_url" type="url" maxlength="1000" placeholder="http://local-server/repeaters-gmrs.geojson"><small class="field-help">Kept separate because amateur and GMRS listings have different licensing and access rules.</small></label>
+                <label>MeshCore node JSON URL<input name="meshcore_url" type="url" maxlength="1000" placeholder="http://meshcore-gateway.local/nodes.json"><small class="field-help">Read-only version-1 node export from a local companion or gateway. Tickets Local never transmits to the mesh.</small></label>
+                <label>AREDN status URLs<textarea name="aredn_node_urls" rows="3" maxlength="5000" placeholder="http://node.local/status.json"></textarea><small class="field-help">Up to 10 whitespace-separated read-only JSON endpoints.</small></label>
+                <label>Local sensor URLs<textarea name="sensor_urls" rows="3" maxlength="5000" placeholder="http://sensor.local/tickets-sensors.json"></textarea><small class="field-help">Up to 10 endpoints using the documented Tickets Local sensor format.</small></label>
+                <div class="weather-runtime" id="integration-runtime">Integration status has not loaded yet.</div>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Save integration settings</button></div>
+            </form>
+            <article class="panel data-card">
+              <div class="data-icon"><svg><use href="#i-download"/></svg></div>
+              <div><h3>Operational data &amp; backup</h3><p>Complete backup includes the append-only event log and every incident attachment. Keep a copy elsewhere.</p></div>
+              <div><a class="secondary-button link-button" href="/api/backup/archive">Complete backup</a> <a class="text-button" href="/api/backup">Event log only</a></div>
+            </article>
+			<article class="panel data-card restore-card">
+			  <div class="data-icon"><svg><use href="#i-upload"/></svg></div>
+			  <div><h3>Validate &amp; restore event log</h3><p>Dry-run an NDJSON backup before replacing operational data. Applying always preserves the current log first.</p></div>
+			  <input id="restore-event-file" type="file" accept=".ndjson,application/x-ndjson">
+			  <div class="restore-actions"><button class="secondary-button" id="validate-restore" type="button">Run dry validation</button><button class="primary-button" id="apply-restore" type="button" disabled>Apply validated restore</button></div>
+			  <div class="restore-report" id="restore-report">No restore file validated.</div>
+			</article>
+            <article class="panel data-card">
+              <div class="data-icon demo"><svg><use href="#i-grid"/></svg></div>
+              <div><h3>Explore with sample data</h3><p>On an empty system, add a sample incident, two responders, and a facility to evaluate the workflow.</p></div>
+              <button class="secondary-button" id="add-demo-data">Add sample data</button>
+            </article>
+            <article class="panel safety-card">
+              <h3>Deployment boundary</h3>
+              <p>Standalone and Client browser interfaces remain on <code>127.0.0.1</code>. Host mode accepts authenticated Tickets Local clients on the selected LAN port. It is intended for a trusted private network—not direct Internet exposure.</p>
+            </article>
+          </div>
+        </section>
+        <section class="page" data-page-view="about">
+          <div class="section-heading"><div><p class="eyebrow">PROJECT INFORMATION</p><h2>About &amp; Licenses</h2><p>Licensing, attribution, and operational limitations.</p></div></div>
+          <article class="panel about-panel"><div class="settings-body">
+            <h3>Tickets Local <span class="version-badge">Version 0.5.6</span></h3>
+            <p><strong>Copyright © 2026 Andrew Mark Gossett and Tickets Local contributors.</strong></p>
+            <p>Tickets Local is an AI-assisted hobby project. It is not an official OpenISES release, certified dispatch system, emergency service, or substitute for validated public-safety systems and procedures.</p>
+            <p><strong>No warranty:</strong> this software is provided without warranty of any kind under GNU GPL v2. Operators are responsible for evaluating its suitability, data sources, connectivity, and outputs.</p>
+            <h3>License and source</h3>
+            <p>Tickets Local is distributed under GNU GPL v2. Release source, notices, and matching source for bundled copyleft components are provided with the application and release.</p>
+            <h3>Third-party components</h3>
+            <p>Signed macOS releases may bundle Dire Wolf, gpsd/libgps, Hamlib, HIDAPI, PortAudio, and libusb. Exact versions, licenses, copyright notices, and corresponding source archives are included in the application resources.</p>
+            <h3>Map and data attribution</h3>
+            <p><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors — data available under ODbL</a></p>
+            <p>NOAA/National Weather Service and USGS names identify enabled public data sources and do not imply endorsement.</p>
+          </div></article>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="sidebar-scrim" id="sidebar-scrim"></div>
+
+  <dialog id="incident-dialog" class="record-dialog">
+    <form id="incident-form">
+      <header class="dialog-header">
+        <div><p class="eyebrow" id="incident-dialog-eyebrow">NEW DISPATCH RECORD</p><h2 id="incident-dialog-title">Create incident</h2></div>
+        <button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+      </header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <div class="form-section">
+          <h3>Incident details</h3>
+          <label class="wide">Title / scope<input name="title" maxlength="160" required placeholder="Brief description of the incident"></label>
+          <div class="form-row three">
+            <label>Type<select name="type" required><option value="">Select type</option><option>Medical</option><option>Fire</option><option>Weather</option><option>Search &amp; Rescue</option><option>Welfare Check</option><option>Communications</option><option>Logistics</option><option>Public Assistance</option><option>Other</option></select></label>
+            <label>Priority<select name="severity" required><option value="critical">Critical</option><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>
+            <label>Status<select name="status" required><option value="new">New</option><option value="assigned">Assigned</option><option value="enroute">En route</option><option value="onscene">On scene</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option></select></label>
+          </div>
+          <div class="incident-stage-selector" id="incident-stage-selector" aria-label="Incident progression">
+            <button type="button" data-incident-stage="new">1 · New</button>
+            <button type="button" data-incident-stage="assigned">2 · Assigned</button>
+            <button type="button" data-incident-stage="enroute">3 · En route</button>
+            <button type="button" data-incident-stage="onscene">4 · On scene</button>
+            <button type="button" data-incident-stage="closed">5 · Closed</button>
+          </div>
+          <label class="wide">Description<textarea name="description" rows="4" maxlength="20000" placeholder="Situation details, hazards, access notes, or caller information"></textarea></label>
+        </div>
+        <div class="form-section">
+          <div class="form-section-heading"><h3>Location</h3><button type="button" class="text-button" id="geocode-button"><svg><use href="#i-map-pin"/></svg>Look up address</button></div>
+          <label class="wide">Use a saved location<select id="incident-saved-location"><option value="">Enter a different location</option></select></label>
+          <label class="wide">Address or location<input name="address" maxlength="200" required placeholder="Street address, intersection, landmark, or grid reference"><small class="field-help">For cross streets, use formats such as Main St &amp; First Ave. Lookup uses public OpenStreetMap services; cross-street searches also send the configured map-home area to Overpass.</small></label>
+          <div class="form-row three">
+            <label>City<input name="city" maxlength="80"></label>
+            <label>State / region<input name="region" maxlength="40"></label>
+            <label>Postal code<input name="postal_code" maxlength="20"></label>
+          </div>
+          <div id="geocode-results" class="geocode-results"></div>
+          <div class="form-row two">
+            <label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any" placeholder="Optional"></label>
+            <label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any" placeholder="Optional"></label>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3>Caller / contact</h3>
+          <div class="form-row two">
+            <label>Name<input name="contact_name" maxlength="100"></label>
+            <label>Phone<input name="contact_phone" type="tel" maxlength="40"></label>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3>Responder assignments</h3>
+          <div class="assignment-picker" id="assignment-picker"></div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-heading"><div><h3>Incident command</h3><small class="field-help">Optional ICS command and general staff roles.</small></div><button type="button" class="text-button" id="add-command-role">Add role</button></div>
+          <div class="command-role-list" id="command-role-list"></div>
+        </div>
+        <div class="form-section existing-only" id="incident-actions-section">
+          <h3>Action log</h3>
+          <div class="action-composer"><input id="new-action-text" maxlength="4000" placeholder="Add a dispatch note or operational update"><button type="button" class="secondary-button" id="add-action-button">Add note</button></div>
+          <div class="incident-action-list" id="incident-action-list"></div>
+        </div>
+        <div class="form-section existing-only" id="incident-attachments-section">
+          <h3>Attachments</h3>
+          <div class="action-composer"><input id="incident-attachment-file" type="file" accept="image/jpeg,image/png,application/pdf"><button type="button" class="secondary-button" id="upload-attachment-button">Add file</button></div>
+          <small class="field-help">JPEG, PNG, or PDF; maximum 10 MB each and 20 files per incident. Use Complete backup to preserve files.</small>
+          <div class="incident-attachment-list" id="incident-attachment-list"></div>
+        </div>
+		<div class="form-section existing-only">
+		  <div class="form-section-heading"><h3>Reviewed exports</h3><button type="button" class="secondary-button" id="open-incident-export">Preview export</button></div>
+		  <small class="field-help">Prepare a Winlink summary or ICS-213, ICS-214, or ICS-309 file. Tickets Local never transmits exports.</small>
+		</div>
+      </div>
+      <footer class="dialog-footer">
+        <span id="incident-dialog-meta"></span>
+        <div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save incident</button></div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="incident-export-dialog" class="record-dialog small-dialog">
+	<form id="incident-export-form">
+	  <header class="dialog-header"><div><p class="eyebrow">OPERATOR-REVIEWED OUTPUT</p><h2 id="incident-export-title">Export incident</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+	  <div class="dialog-body export-dialog-body">
+		<div class="export-warning"><strong>Review before use</strong><span>This preview is not transmitted. Download it, review it, then send it with your authorized external tool.</span></div>
+		<label>Format<select id="incident-export-format" name="format"><option value="winlink">Winlink incident summary</option><option value="ics213">ICS-213 General Message</option><option value="ics214">ICS-214 Activity Log (CSV)</option><option value="ics309">ICS-309 Communications Log (CSV)</option></select></label>
+		<div class="export-winlink-fields" id="export-winlink-fields">
+		  <label>Recipient email address<input id="winlink-email-recipient" type="email" maxlength="254" placeholder="CALLSIGN@winlink.org"><small class="field-help">Use the operator-confirmed Winlink or Internet email address.</small></label>
+		  <div class="form-row two"><label>Precedence<select id="winlink-email-precedence"><option value="R">Routine (R)</option><option value="P">Priority (P)</option><option value="O">Immediate (O)</option><option value="Z">Flash (Z)</option></select></label><label>Subject without prefix<input id="winlink-email-subject" maxlength="100"></label></div>
+		  <small class="field-help">Tickets Local adds <code>//WL2K R/</code> (or the selected precedence) at the beginning of the email subject.</small>
+		</div>
+		<label>Editable preview<textarea id="incident-export-preview" rows="18" maxlength="2097152" spellcheck="false"></textarea></label>
+		<small class="field-help" id="incident-export-meta">Choose a format to generate the preview.</small>
+	  </div>
+	  <footer class="dialog-footer"><span>No automatic transmission</span><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="secondary-button" id="refresh-incident-export" type="button">Regenerate</button><button class="primary-button" id="download-incident-export" type="button" disabled>Download reviewed file</button></div></footer>
+	</form>
+  </dialog>
+
+  <dialog id="responder-dialog" class="record-dialog small-dialog">
+    <form id="responder-form">
+      <header class="dialog-header"><div><p class="eyebrow">RESOURCE RECORD</p><h2 id="responder-dialog-title">Add responder</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <div class="form-row two"><label>Name<input name="name" maxlength="100" placeholder="Medic 1"></label><label>Callsign<input name="callsign" maxlength="24" placeholder="M1"></label></div>
+        <div class="form-row two"><label>Type<input name="type" maxlength="60" placeholder="Medical, command, search…"></label><label>Status<select name="status"><option value="available">Available</option><option value="assigned">Assigned</option><option value="enroute">En route</option><option value="onscene">On scene</option><option value="out_of_service">Out of service</option></select></label></div>
+        <label>Phone<input name="phone" type="tel" maxlength="40"></label>
+        <label>Capabilities<input name="capabilities" placeholder="ALS, transport, chainsaw (comma separated)"></label>
+        <label class="toggle-row">
+          <input name="aprs_enabled" type="checkbox">
+          <span><strong>Track this callsign with APRS</strong><small>Uses the responder callsign with whichever Internet, local RF, or Hybrid source is selected.</small></span>
+        </label>
+        <div class="form-section-heading"><span>Position</span><button type="button" class="text-button" id="use-device-location"><svg><use href="#i-map-pin"/></svg>Use this device’s location</button></div>
+        <div class="form-row two"><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any"></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any"></label></div>
+        <small class="field-help" id="device-location-status">One-time capture only. Tickets Local does not track this browser in the background.</small>
+        <div class="owntracks-box existing-only" id="owntracks-box"><div><strong>OwnTracks HTTP endpoint</strong><code id="owntracks-endpoint"></code><small id="owntracks-help">Host mode is required for a phone on the LAN.</small></div><button class="secondary-button" id="copy-owntracks-endpoint" type="button">Copy URL</button></div>
+        <div class="owntracks-box existing-only" id="opengts-box"><div><strong>OpenGTS-compatible HTTP endpoint</strong><code id="opengts-endpoint"></code><small id="opengts-help">Host mode is required for a GPS tracker on the LAN.</small></div><button class="secondary-button" id="copy-opengts-endpoint" type="button">Copy URL</button></div>
+        <label>Notes<textarea name="notes" rows="3" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer"><span></span><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save responder</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog id="facility-dialog" class="record-dialog small-dialog">
+    <form id="facility-form">
+      <header class="dialog-header"><div><p class="eyebrow">FACILITY RECORD</p><h2 id="facility-dialog-title">Add facility</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <label>Name<input name="name" maxlength="120" required></label>
+        <div class="form-row two"><label>Type<input name="type" maxlength="60" placeholder="Hospital, shelter, station…"></label><label>Status<select name="status"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label></div>
+        <label>Use a saved location<select id="facility-saved-location"><option value="">Enter a different location</option></select></label>
+        <div>
+          <div class="form-section-heading"><label for="facility-address">Address or place</label><button type="button" class="text-button" id="facility-geocode-button"><svg><use href="#i-map-pin"/></svg>Look up address</button></div>
+          <input id="facility-address" name="address" maxlength="200" placeholder="Full street address, city, and state">
+          <div id="facility-geocode-results" class="geocode-results"></div>
+        </div>
+        <label>Phone<input name="phone" type="tel" maxlength="40"></label>
+        <div class="form-row two"><label>Total capacity<input name="capacity" type="number" min="0" value="0"></label><label>Occupied<input name="occupied" type="number" min="0" value="0"></label></div>
+        <div class="form-row two"><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any"></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any"></label></div>
+        <label>Notes<textarea name="notes" rows="3" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer"><span></span><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save facility</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog id="location-dialog" class="record-dialog small-dialog">
+    <form id="location-form">
+      <header class="dialog-header"><div><p class="eyebrow">SAVED PLACE</p><h2 id="location-dialog-title">Add location</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <div class="form-row two"><label>Name<input name="name" maxlength="120" required placeholder="North staging area"></label><label>Type<input name="type" maxlength="60" placeholder="Staging, access, landmark…"></label></div>
+        <div>
+          <div class="form-section-heading"><label for="location-address">Address or location</label><button type="button" class="text-button" id="location-geocode-button"><svg><use href="#i-map-pin"/></svg>Find coordinates</button></div>
+          <input id="location-address" name="address" maxlength="200" required placeholder="Street address, intersection, landmark, or description">
+        </div>
+        <div class="form-row three">
+          <label>City<input name="city" maxlength="80"></label>
+          <label>State / region<input name="region" maxlength="40"></label>
+          <label>Postal code<input name="postal_code" maxlength="20"></label>
+        </div>
+        <div id="location-geocode-results" class="geocode-results"></div>
+        <div class="form-row two"><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any"></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any"></label></div>
+        <label>Notes<textarea name="notes" rows="3" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer">
+        <button class="danger-button existing-only" id="delete-location" type="button">Delete location</button>
+        <div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save location</button></div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="asset-dialog" class="record-dialog small-dialog">
+    <form id="asset-form">
+      <header class="dialog-header"><div><p class="eyebrow">LOGISTICS RECORD</p><h2 id="asset-dialog-title">Add asset</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <div class="form-row two"><label>Category<select name="category" required><option value="vehicle">Vehicle</option><option value="equipment">Equipment</option></select></label><label>Status<select name="status" required><option value="ready">Ready</option><option value="assigned">Assigned</option><option value="maintenance">Maintenance</option><option value="out_of_service">Out of service</option><option value="retired">Retired</option></select></label></div>
+        <label>Name<input name="name" maxlength="120" required placeholder="Command vehicle or portable generator"></label>
+        <div class="form-row two"><label>Identifier / call sign<input name="identifier" maxlength="80" placeholder="VIN tail, asset tag, or radio call sign"></label><label>Quantity<input name="quantity" type="number" min="1" max="100000" value="1" required></label></div>
+        <div class="form-row two"><label>Location<input name="location" maxlength="160" placeholder="Station, cache, or assigned incident"></label><label>Custodian<input name="custodian" maxlength="120" placeholder="Responsible person or team"></label></div>
+        <label>Maintenance due<input name="maintenance_due" type="date"></label>
+        <label>Notes<textarea name="notes" rows="4" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer"><button class="danger-button existing-only" id="delete-asset" type="button">Delete asset</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save asset</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog id="schedule-dialog" class="record-dialog small-dialog">
+    <form id="schedule-form">
+      <header class="dialog-header"><div><p class="eyebrow">OPERATIONAL CALENDAR</p><h2 id="schedule-dialog-title">Add scheduled item</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <label>Title<input name="title" maxlength="160" required placeholder="Day shift, radio exercise, vehicle service…"></label>
+        <div class="form-row two"><label>Type<select name="type" required><option value="shift">Shift</option><option value="exercise">Exercise</option><option value="training">Training</option><option value="maintenance">Maintenance</option><option value="meeting">Meeting</option><option value="other">Other</option></select></label><label>Status<select name="status" required><option value="planned">Planned</option><option value="confirmed">Confirmed</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label></div>
+        <div class="form-row two"><label>Starts<input name="start_at" type="datetime-local" required></label><label>Ends<input name="end_at" type="datetime-local" required></label></div>
+        <div class="form-row two"><label>Location<input name="location" maxlength="200" placeholder="EOC, station, field site…"></label><label>Coordinator<input name="coordinator" maxlength="120"></label></div>
+        <label>Assigned responders<div class="assignment-picker schedule-assignment-picker" id="schedule-assignment-picker"></div></label>
+        <label>Notes<textarea name="notes" rows="4" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer"><button class="danger-button existing-only" id="delete-schedule-item" type="button">Delete item</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save item</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog id="qualification-dialog" class="record-dialog small-dialog">
+    <form id="qualification-form">
+      <header class="dialog-header"><div><p class="eyebrow">PERSONNEL READINESS</p><h2 id="qualification-dialog-title">Add qualification</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+      <div class="dialog-body">
+        <input type="hidden" name="id">
+        <label>Responder<select name="responder_id" required></select></label>
+        <div class="form-row two"><label>Category<select name="category" required><option value="certification">Certification</option><option value="course">Course</option><option value="license">License</option><option value="exercise">Exercise</option><option value="other">Other</option></select></label><label>Status<select name="status" required><option value="current">Current</option><option value="pending">Pending</option><option value="expired">Expired</option><option value="revoked">Revoked</option></select></label></div>
+        <label>Name<input name="name" maxlength="160" required placeholder="ICS-100, CPR/AED, amateur radio license…"></label>
+        <div class="form-row two"><label>Provider / authority<input name="provider" maxlength="160"></label><label>Credential ID<input name="credential_id" maxlength="100"></label></div>
+        <div class="form-row two"><label>Completed / issued<input name="completed_at" type="date"></label><label>Expires<input name="expires_at" type="date"></label></div>
+        <label>Notes<textarea name="notes" rows="4" maxlength="4000"></textarea></label>
+      </div>
+      <footer class="dialog-footer"><button class="danger-button existing-only" id="delete-qualification" type="button">Delete qualification</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save qualification</button></div></footer>
+    </form>
+  </dialog>
+
+  <div class="shutdown-screen" id="shutdown-screen" hidden role="status" aria-live="assertive">
+    <div class="shutdown-card">
+      <div class="brand-mark" aria-hidden="true">TL</div>
+      <p class="eyebrow">APPLICATION STOPPED</p>
+      <h1>Tickets Local has quit</h1>
+      <p>APRS and the local server were stopped safely. You can close this browser window.</p>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+  <script src="/app.js?v=0.5.6" defer></script>
+</body>
+</html>

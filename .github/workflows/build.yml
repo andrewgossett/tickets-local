@@ -1,0 +1,72 @@
+name: Build portable releases
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.24.x"
+          cache: false
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Static analysis
+        run: go vet ./...
+
+      - name: Package portable builds
+        run: |
+          chmod +x scripts/package-release.sh
+          ./scripts/package-release.sh
+
+      - name: Upload release packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: tickets-local-portable
+          path: |
+            dist/Tickets-Local-*.zip
+            dist/Tickets-Local-*.tar.gz
+            dist/Tickets-Local-*-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-test-and-build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.24.x"
+          cache: false
+
+      - name: Test and package unsigned Windows GUI build
+        shell: pwsh
+        run: ./scripts/test-windows-package.ps1
+
+      - name: Upload unsigned Windows package and checksum
+        uses: actions/upload-artifact@v7
+        with:
+          name: tickets-local-windows-unsigned
+          path: |
+            dist/Tickets-Local-*-Windows-x64-unsigned.zip
+            dist/Tickets-Local-*-Windows-x64-unsigned.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
