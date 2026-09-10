@@ -1,4 +1,4 @@
-TICKETS LOCAL 0.5.6
+TICKETS LOCAL 0.5.7
 ===================
 
 Tickets Local is a standalone or LAN-shared dispatch console. It does not require a

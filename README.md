@@ -21,9 +21,9 @@ Tickets Local clients on a trusted private LAN.
 
 No GitHub account is required. Choose the download for your computer:
 
-- **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-macOS-universal-notarized.dmg)
-- **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64.exe)
-- **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64-unsigned.zip)
+- **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-macOS-universal-notarized.dmg)
+- **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-Windows-x64.exe)
+- **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-Windows-x64-unsigned.zip)
 
 See the [latest release page](https://github.com/andrewgossett/tickets-local/releases/latest)
 for checksums, release notes, and every available package.
@@ -71,6 +71,8 @@ for checksums, release notes, and every available package.
 - Click-to-click driving routes through a default or local OSRM-compatible router
 - Persistent vehicles and equipment inventory with readiness and maintenance status
 - Shared operations schedule for shifts, exercises, training, maintenance, and meetings
+- Phone-focused trusted-LAN responder companion with status updates, current
+  assignment, and active incident awareness
 - Responder qualification tracking with expiration and readiness warnings
 - Append-only local/LAN operational messaging with incident-linked channels
 - Explicit one-time browser device-location capture for field responders
@@ -96,7 +98,7 @@ for checksums, release notes, and every available package.
 
 ### Windows
 
-1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64-unsigned.zip).
+1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-Windows-x64-unsigned.zip).
 2. Double-click the downloaded `.exe` or `Tickets Local.exe` inside the ZIP.
 3. The console opens in the default browser.
 4. Keep the executable running while using the application.
@@ -106,14 +108,14 @@ Choose **More info** only after verifying the checksum and source.
 
 ### macOS
 
-1. [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-macOS-universal-notarized.dmg).
+1. [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.7/Tickets-Local-0.5.7-macOS-universal-notarized.dmg).
 2. Open the downloaded DMG.
 3. Drag **Tickets Local.app** into **Applications**.
 4. Open **Tickets Local** from Applications.
 
 The universal package supports both Apple silicon and Intel Macs. Its Developer
 ID signature and Apple notarization can be verified against the checksum shown
-on the [release page](https://github.com/andrewgossett/tickets-local/releases/tag/v0.5.6).
+on the [release page](https://github.com/andrewgossett/tickets-local/releases/tag/v0.5.7).
 
 For a Developer ID owner, the project includes a universal Mac signing kit.
 Build the kit with:
@@ -158,7 +160,7 @@ On Windows, build and test the x64 GUI package with PowerShell:
 ```
 
 The Windows script runs the complete Go suite and `go vet`, then produces
-`dist/Tickets-Local-0.5.6-Windows-x64-unsigned.zip` and its `.sha256` file.
+`dist/Tickets-Local-0.5.7-Windows-x64-unsigned.zip` and its `.sha256` file.
 It stages only the executable, README, license, and notice files in a fresh directory.
 Use `-GoExecutable 'C:\path\to\go.exe'` when Go is not on PATH.
 Run `./scripts/test-windows-package.ps1` in PowerShell 7 to also verify the PE
@@ -209,6 +211,20 @@ operational event log. If the Host is unavailable, Clients preserve their local
 configuration but cannot read or change shared operational data. Host mode is
 designed for a trusted private LAN; do not expose its port directly to the
 Internet.
+
+### Mobile responder companion
+
+While connected to the same trusted network as a Tickets Local Host, open the
+Host address with `/?view=mobile` on a phone—for example,
+`http://192.168.1.50:8787/?view=mobile`. Enter the Host LAN access key, select
+your responder record, and use the large controls to update availability or
+dispatch status. The page also shows that responder's active assignment and the
+current incident list.
+
+This initial companion stores the shared Host key only in that phone browser.
+QR enrollment, device-specific revocable credentials, and offline queuing are
+planned next. Keep the Host on a trusted private LAN and do not expose it
+directly to the Internet.
 
 ## Repeater and MeshCore map feeds
 

@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/png" href="/icon-64.png">
   <title>Tickets Local</title>
-  <link rel="stylesheet" href="/styles.css?v=0.5.6">
+  <link rel="stylesheet" href="/styles.css?v=0.5.7">
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -399,7 +399,7 @@
 
         <section class="page" data-page-view="settings">
           <div class="section-heading">
-            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.6</span>
+            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.7</span>
           </div>
           <div class="settings-grid">
             <form class="panel network-settings" id="network-settings-form">
@@ -658,7 +658,7 @@
         <section class="page" data-page-view="about">
           <div class="section-heading"><div><p class="eyebrow">PROJECT INFORMATION</p><h2>About &amp; Licenses</h2><p>Licensing, attribution, and operational limitations.</p></div></div>
           <article class="panel about-panel"><div class="settings-body">
-            <h3>Tickets Local <span class="version-badge">Version 0.5.6</span></h3>
+            <h3>Tickets Local <span class="version-badge">Version 0.5.7</span></h3>
             <p><strong>Copyright © 2026 Andrew Mark Gossett and Tickets Local contributors.</strong></p>
             <p>Tickets Local is an AI-assisted hobby project. It is not an official OpenISES release, certified dispatch system, emergency service, or substitute for validated public-safety systems and procedures.</p>
             <p><strong>No warranty:</strong> this software is provided without warranty of any kind under GNU GPL v2. Operators are responsible for evaluating its suitability, data sources, connectivity, and outputs.</p>
@@ -674,6 +674,48 @@
       </main>
     </div>
   </div>
+
+  <main class="mobile-companion" id="mobile-companion" hidden>
+    <header class="mobile-companion-header">
+      <div class="brand-mark" aria-hidden="true">TL</div>
+      <div><p class="eyebrow">MOBILE COMPANION</p><h1>Responder status</h1></div>
+      <span class="sync-state" id="mobile-sync-state"><span></span> Connecting</span>
+    </header>
+
+    <section class="mobile-setup-card" id="mobile-setup-card">
+      <h2>Connect to this Tickets Local Host</h2>
+      <p>Enter the Host LAN access key. It stays in this browser on this device and is sent only to this Host.</p>
+      <label>LAN access key<input id="mobile-access-key" type="password" maxlength="128" autocomplete="off" placeholder="Paste the Host access key"></label>
+      <button class="primary-button" id="mobile-connect" type="button">Connect</button>
+      <small>This first mobile build uses the existing shared LAN key. Device enrollment and revocation are the next backlog item.</small>
+    </section>
+
+    <div class="mobile-operations" id="mobile-operations" hidden>
+      <section class="mobile-card">
+        <label>Your responder<select id="mobile-responder-select"><option value="">Choose your responder record</option></select></label>
+        <div class="mobile-current-status" id="mobile-current-status">Choose a responder to update status.</div>
+        <div class="mobile-status-grid" id="mobile-status-grid">
+          <button type="button" data-mobile-status="available">Available</button>
+          <button type="button" data-mobile-status="assigned">Assigned</button>
+          <button type="button" data-mobile-status="enroute">En route</button>
+          <button type="button" data-mobile-status="onscene">On scene</button>
+          <button type="button" data-mobile-status="out_of_service">Out of service</button>
+        </div>
+      </section>
+
+      <section class="mobile-card">
+        <div class="mobile-card-heading"><div><p class="eyebrow">CURRENT ASSIGNMENT</p><h2 id="mobile-assignment-title">No responder selected</h2></div></div>
+        <div id="mobile-assignment-detail" class="mobile-empty">Select your responder record above.</div>
+      </section>
+
+      <section class="mobile-card">
+        <div class="mobile-card-heading"><div><p class="eyebrow">ACTIVE INCIDENTS</p><h2>Situation list</h2></div><button class="text-button" id="mobile-refresh" type="button">Refresh</button></div>
+        <div class="mobile-incident-list" id="mobile-incident-list"></div>
+      </section>
+
+      <button class="text-button mobile-forget" id="mobile-forget-key" type="button">Forget this device’s access key</button>
+    </div>
+  </main>
 
   <div class="sidebar-scrim" id="sidebar-scrim"></div>
 
@@ -903,6 +945,6 @@
   </div>
 
   <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
-  <script src="/app.js?v=0.5.6" defer></script>
+  <script src="/app.js?v=0.5.7" defer></script>
 </body>
 </html>

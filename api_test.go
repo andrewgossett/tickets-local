@@ -88,7 +88,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.6`,
+		`Version 0.5.7`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -97,6 +97,17 @@ func TestAPILifecycle(t *testing.T) {
 	} {
 		if !strings.Contains(indexHTML, disclosure) {
 			t.Fatalf("About, warranty, or attribution disclosure is missing %q", disclosure)
+		}
+	}
+	for _, mobileElement := range []string{
+		`id="mobile-companion"`,
+		`id="mobile-access-key"`,
+		`id="mobile-responder-select"`,
+		`data-mobile-status="enroute"`,
+		`id="mobile-incident-list"`,
+	} {
+		if !strings.Contains(indexHTML, mobileElement) {
+			t.Fatalf("mobile companion markup is missing %q", mobileElement)
 		}
 	}
 	script, err := http.Get(server.URL + "/app.js")
@@ -127,6 +138,17 @@ func TestAPILifecycle(t *testing.T) {
 	if !strings.Contains(scriptText, "refreshNetworkAddresses") {
 		t.Fatal("app script is missing LAN draft preservation or address refresh behavior")
 	}
+	for _, mobileBehavior := range []string{
+		`get("view") === "mobile"`,
+		`localStorage.getItem("tickets-local-mobile-lan-key")`,
+		`request.headers["X-Tickets-Local-LAN-Key"]`,
+		`async function updateMobileResponderStatus`,
+		`expected_updated_at: responder.updated_at`,
+	} {
+		if !strings.Contains(scriptText, mobileBehavior) {
+			t.Fatalf("mobile companion behavior is missing %q", mobileBehavior)
+		}
+	}
 	styles, err := http.Get(server.URL + "/styles.css")
 	if err != nil {
 		t.Fatal(err)
@@ -137,6 +159,10 @@ func TestAPILifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	stylesText := string(stylesBody)
+	if !strings.Contains(stylesText, "body.mobile-companion-mode .mobile-companion") ||
+		!strings.Contains(stylesText, ".mobile-status-grid") {
+		t.Fatal("mobile companion layout is missing")
+	}
 	if !strings.Contains(stylesText, ".map-drawing-control { position: absolute; z-index: 9; left: 12px; bottom: 82px;") ||
 		!strings.Contains(stylesText, "max-width: calc(100% - 76px)") {
 		t.Fatal("map drawing toolbar is not separated from the weather and help overlays")

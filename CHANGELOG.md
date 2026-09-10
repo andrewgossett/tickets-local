@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added the first phone-focused mobile companion at `/?view=mobile`. A responder
+  can connect to a trusted-LAN Host with the existing access key, select their
+  record, update operational status with conflict protection, and see their
+  current assignment and the active incident list. QR enrollment and
+  device-specific revocable credentials remain the next planned increment.
+
 - Displayed the running release version prominently on both Settings and
   About & Licenses.
 - Kept local Codex skills, agent instructions, handoff material, and the

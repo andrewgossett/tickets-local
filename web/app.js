@@ -71,6 +71,7 @@ const app = {
   messageChannelFilter: "all",
   aprsAudioDevices: [],
   mapWindowMode: new URLSearchParams(window.location.search).get("view") === "map",
+  mobileMode: new URLSearchParams(window.location.search).get("view") === "mobile",
   map: null
 };
 
@@ -96,6 +97,15 @@ const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  if (app.mobileMode) {
+    document.body.classList.add("mobile-companion-mode");
+    $("#mobile-companion").hidden = false;
+    applyTheme(localStorage.getItem("tickets-local-theme") || "dark");
+    bindMobileCompanion();
+    await loadMobileState(false);
+    app.refreshTimer = setInterval(() => loadMobileState(false), 10000);
+    return;
+  }
   if (app.mapWindowMode) document.body.classList.add("map-window-mode");
   applyTheme(localStorage.getItem("tickets-local-theme") || "dark");
   bindNavigation();
@@ -118,6 +128,110 @@ async function init() {
   startLANStatePoll();
   startNetworkStatusPoll();
   startWeatherPoll();
+}
+
+function bindMobileCompanion() {
+  const savedKey = localStorage.getItem("tickets-local-mobile-lan-key") || "";
+  $("#mobile-access-key").value = savedKey;
+  $("#mobile-connect").addEventListener("click", async () => {
+    const key = $("#mobile-access-key").value.trim();
+    if (key) localStorage.setItem("tickets-local-mobile-lan-key", key);
+    else localStorage.removeItem("tickets-local-mobile-lan-key");
+    await loadMobileState(true);
+  });
+  $("#mobile-refresh").addEventListener("click", () => loadMobileState(true));
+  $("#mobile-responder-select").addEventListener("change", event => {
+    localStorage.setItem("tickets-local-mobile-responder", event.target.value);
+    renderMobileCompanion();
+  });
+  $("#mobile-status-grid").addEventListener("click", event => {
+    const button = event.target.closest("[data-mobile-status]");
+    if (button) updateMobileResponderStatus(button.dataset.mobileStatus, button);
+  });
+  $("#mobile-forget-key").addEventListener("click", () => {
+    localStorage.removeItem("tickets-local-mobile-lan-key");
+    $("#mobile-access-key").value = "";
+    $("#mobile-operations").hidden = true;
+    $("#mobile-setup-card").hidden = false;
+    setMobileConnection(false, "Access key removed");
+  });
+}
+
+async function loadMobileState(showError = false) {
+  setMobileConnection(false, "Connecting");
+  try {
+    app.state = await api("/api/state");
+    $("#mobile-setup-card").hidden = true;
+    $("#mobile-operations").hidden = false;
+    setMobileConnection(true, "Live");
+    renderMobileCompanion();
+  } catch (error) {
+    $("#mobile-setup-card").hidden = false;
+    $("#mobile-operations").hidden = true;
+    setMobileConnection(false, error.status === 401 ? "Access key required" : "Host unavailable");
+    if (showError) toast("Could not connect", error.message, "error");
+  }
+}
+
+function setMobileConnection(connected, message) {
+  const state = $("#mobile-sync-state");
+  state.classList.toggle("offline", !connected);
+  state.innerHTML = `<span></span> ${html(message)}`;
+}
+
+function renderMobileCompanion() {
+  if (!app.mobileMode) return;
+  const select = $("#mobile-responder-select");
+  const savedID = localStorage.getItem("tickets-local-mobile-responder") || "";
+  const responders = [...(app.state.responders || [])].sort((a, b) => displayResponder(a).localeCompare(displayResponder(b)));
+  select.innerHTML = `<option value="">Choose your responder record</option>${responders.map(item => `<option value="${attr(item.id)}">${html(displayResponder(item))}</option>`).join("")}`;
+  select.value = responders.some(item => item.id === savedID) ? savedID : "";
+  const responder = responders.find(item => item.id === select.value);
+  const current = $("#mobile-current-status");
+  current.className = `mobile-current-status${responder ? ` status-${attr(responder.status)}` : ""}`;
+  current.textContent = responder ? `${displayResponder(responder)} is ${label(responder.status)}` : "Choose a responder to update status.";
+  $$("[data-mobile-status]").forEach(button => {
+    button.disabled = !responder;
+    button.classList.toggle("active", responder?.status === button.dataset.mobileStatus);
+  });
+  const assignment = responder ? activeIncidents().find(incident => (incident.assignments || []).some(item => item.responder_id === responder.id)) : null;
+  $("#mobile-assignment-title").textContent = assignment ? `Incident #${assignment.number} · ${assignment.title}` : responder ? "No active assignment" : "No responder selected";
+  $("#mobile-assignment-detail").innerHTML = assignment
+    ? `<strong>${html(locationText(assignment))}</strong><span>${html(label(assignment.severity))} priority · ${html(label(assignment.status))}</span><p>${html(assignment.description || "No additional incident details.")}</p>`
+    : `<div class="mobile-empty">${responder ? "This responder is not assigned to an active incident." : "Select your responder record above."}</div>`;
+  const incidents = activeIncidents().sort(sortIncidents);
+  $("#mobile-incident-list").innerHTML = incidents.length ? incidents.map(incident => {
+    const assigned = (incident.assignments || []).map(item => responderByID(item.responder_id)).filter(Boolean);
+    return `<article class="mobile-incident severity-${attr(incident.severity)}"><div><strong>#${incident.number} · ${html(incident.title)}</strong><span>${html(locationText(incident))}</span></div><span class="badge status-${attr(incident.status)}">${html(label(incident.status))}</span><small>${assigned.length ? `Assigned: ${html(assigned.map(displayResponder).join(", "))}` : "No responders assigned"}</small></article>`;
+  }).join("") : `<div class="mobile-empty">No active incidents.</div>`;
+}
+
+async function updateMobileResponderStatus(status, button) {
+  const responder = (app.state.responders || []).find(item => item.id === $("#mobile-responder-select").value);
+  if (!responder) return;
+  $$("[data-mobile-status]").forEach(item => item.disabled = true);
+  try {
+    await api(`/api/responders/${encodeURIComponent(responder.id)}`, { method: "PUT", body: {
+      name: responder.name,
+      callsign: responder.callsign,
+      type: responder.type,
+      status,
+      phone: responder.phone,
+      capabilities: responder.capabilities || [],
+      latitude: responder.latitude,
+      longitude: responder.longitude,
+      aprs_enabled: Boolean(responder.aprs_enabled),
+      notes: responder.notes,
+      expected_updated_at: responder.updated_at
+    }});
+    await loadMobileState(false);
+    toast("Status updated", `${displayResponder(responder)} · ${label(status)}`);
+  } catch (error) {
+    toast("Status was not updated", error.message, "error");
+    await loadMobileState(false);
+  } finally {
+    button.blur();
+  }
 }
 
 function bindNavigation() {
@@ -449,6 +563,7 @@ function renderAll() {
   renderActivityPage();
   renderSettings();
   renderNetworkSettings();
+  renderMobileCompanion();
 }
 
 function renderCurrentPage() {
@@ -2854,6 +2969,11 @@ function setFormBusy(form, busy) {
 
 async function api(url, options = {}) {
   const request = { method: options.method || "GET", headers: { Accept: "application/json", ...(options.headers || {}) } };
+  if (app.mobileMode) {
+    const mobileKey = localStorage.getItem("tickets-local-mobile-lan-key") || "";
+    if (mobileKey) request.headers["X-Tickets-Local-LAN-Key"] = mobileKey;
+    request.headers["X-Tickets-Local-Client"] = "Mobile companion";
+  }
   if (options.body !== undefined) {
     request.headers["Content-Type"] = "application/json";
     request.body = JSON.stringify(options.body);

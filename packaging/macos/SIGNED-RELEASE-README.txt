@@ -1,4 +1,4 @@
-TICKETS LOCAL 0.5.6 — MAC SIGNING AND NOTARIZATION KIT
+TICKETS LOCAL 0.5.7 — MAC SIGNING AND NOTARIZATION KIT
 ======================================================
 
 This kit creates one universal Tickets Local app that runs on both Intel and
@@ -36,9 +36,9 @@ RUN THE KIT
 
 The finished files appear in the "Signed Release" folder:
 
-  Tickets-Local-0.5.6-macOS-universal-notarized.dmg
-  Tickets-Local-0.5.6-macOS-universal-notarized-SHA256.txt
-  Tickets-Local-0.5.6-source.zip
+  Tickets-Local-0.5.7-macOS-universal-notarized.dmg
+  Tickets-Local-0.5.7-macOS-universal-notarized-SHA256.txt
+  Tickets-Local-0.5.7-source.zip
   Third-Party-Source/ (six matching source archives)
 
 The process can take several minutes. Do not close Terminal while Apple is
@@ -68,6 +68,6 @@ LICENSE AND SOURCE
 ------------------
 
 Tickets Local is distributed under GNU GPL v2. The signing tool places the
-matching Tickets-Local-0.5.6-source.zip and Third-Party-Source directory in the
+matching Tickets-Local-0.5.7-source.zip and Third-Party-Source directory in the
 Signed Release folder. Distribute both archives alongside a DMG that contains
 Dire Wolf, or provide an equivalent durable source-code offer.
