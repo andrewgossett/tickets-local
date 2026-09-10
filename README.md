@@ -17,6 +17,17 @@ Tickets Local clients on a trusted private LAN.
 > workflow development. Validate it against your organization's policies before
 > operational public-safety use.
 
+## Download Tickets Local
+
+No GitHub account is required. Choose the download for your computer:
+
+- **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-macOS-universal-notarized.dmg)
+- **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64.exe)
+- **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64-unsigned.zip)
+
+See the [latest release page](https://github.com/andrewgossett/tickets-local/releases/latest)
+for checksums, release notes, and every available package.
+
 ## What works
 
 - Incident creation, editing, severity, lifecycle status, and automatic numbering
@@ -85,8 +96,8 @@ Tickets Local clients on a trusted private LAN.
 
 ### Windows
 
-1. Download and unzip `Tickets-Local-Windows-x64.zip`.
-2. Double-click `Tickets Local.exe`.
+1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-Windows-x64-unsigned.zip).
+2. Double-click the downloaded `.exe` or `Tickets Local.exe` inside the ZIP.
 3. The console opens in the default browser.
 4. Keep the executable running while using the application.
 
@@ -95,22 +106,14 @@ Choose **More info** only after verifying the checksum and source.
 
 ### macOS
 
-1. Download the package matching the Mac:
-   - `macOS-arm64` for Apple silicon (M1 and newer)
-   - `macOS-amd64` for Intel
-2. Unzip it.
-3. For these unsigned community builds, Control-click
-   **Prepare Tickets Local.command**, choose **Open**, and let it repair the
-   app's local signature before the first launch.
-4. Move **Tickets Local.app** to Applications if desired.
+1. [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.6/Tickets-Local-0.5.6-macOS-universal-notarized.dmg).
+2. Open the downloaded DMG.
+3. Drag **Tickets Local.app** into **Applications**.
+4. Open **Tickets Local** from Applications.
 
-The preparation step uses macOS's built-in `codesign` tool and installs no
-software. If macOS still blocks the first launch, Control-click the app and
-choose **Open**, or use **System Settings → Privacy & Security → Open Anyway**.
-Verify the checksum before approving an unsigned build.
-
-Production distribution should use an Apple Developer ID signature and
-notarization.
+The universal package supports both Apple silicon and Intel Macs. Its Developer
+ID signature and Apple notarization can be verified against the checksum shown
+on the [release page](https://github.com/andrewgossett/tickets-local/releases/tag/v0.5.6).
 
 For a Developer ID owner, the project includes a universal Mac signing kit.
 Build the kit with:
