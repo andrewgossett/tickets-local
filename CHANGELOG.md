@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fixed Local RF/Dire Wolf station visibility in Hybrid mode. A position packet
+  decoded directly from radio now appears as a local station even when the same
+  packet reached APRS-IS first; cross-source deduplication still prevents a
+  duplicate tracked-responder trail point.
+- Added a Local RF “map positions” counter so operators can distinguish packets
+  decoded by Dire Wolf from positions actually eligible for map display.
+
 - Added customizable responder and facility map markers. Operators can select
   a color and a two- or three-character unit/facility label; existing records
   continue to work and receive an automatic short label on the map.

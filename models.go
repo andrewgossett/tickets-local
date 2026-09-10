@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.9"
+	version     = "0.5.10"
 )
 
 type State struct {
@@ -263,6 +263,7 @@ type APRSLocalStatus struct {
 	LastPositionAt         *time.Time `json:"last_position_at,omitempty"`
 	PacketsReceived        uint64     `json:"packets_received"`
 	PositionPacketsDecoded uint64     `json:"position_packets_decoded"`
+	PositionsDisplayed     uint64     `json:"positions_displayed"`
 	PositionsUpdated       uint64     `json:"positions_updated"`
 	Reconnects             uint64     `json:"reconnects"`
 	DecoderRunning         bool       `json:"decoder_running"`

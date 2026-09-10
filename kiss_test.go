@@ -119,8 +119,12 @@ func TestAPRSManagerLocalKISSUpdatesTrackedResponder(t *testing.T) {
 			}
 			status := manager.Status().Local
 			if status.PacketsReceived != 1 || status.PositionPacketsDecoded != 1 ||
-				status.PositionsUpdated != 1 || status.State != "connected" {
+				status.PositionsDisplayed != 1 || status.PositionsUpdated != 1 || status.State != "connected" {
 				t.Fatalf("unexpected local APRS status: %+v", status)
+			}
+			stations := manager.Activity()
+			if len(stations) != 1 || stations[0].Callsign != "N0CALL-7" || stations[0].Source != "local_rf" {
+				t.Fatalf("locally decoded station was not displayed: %+v", stations)
 			}
 			return
 		}
@@ -152,6 +156,47 @@ func TestInternetOnlyModeDoesNotEnableLocalReceiver(t *testing.T) {
 	manager := NewAPRSManager(store, log.New(io.Discard, "", 0))
 	if manager.localConfig().enabled {
 		t.Fatal("Internet-only mode enabled the local receiver")
+	}
+}
+
+func TestLocalDecodedPositionIsDisplayedBeforeCrossSourceDedup(t *testing.T) {
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.APRS.Enabled = true
+	settings.APRS.Mode = "hybrid"
+	settings.APRS.LoginCallsign = "N0CALL"
+	settings.APRS.Local.Decoder = "kiss_tcp"
+	settings.APRS.Local.KISSAddress = "127.0.0.1:8001"
+	settings.APRS.Local.ShowAll = true
+	if err = store.SaveAPRSPasscode("12345"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewAPRSManager(store, log.New(io.Discard, "", 0))
+	packetAt := time.Now().UTC()
+	position := APRSPosition{
+		Callsign: "N0LOCAL-7", Latitude: 35.0583, Longitude: -86.6708,
+		Raw: "N0LOCAL-7>APRS:!3503.50N/08640.25W>Local receiver", ReceivedAt: packetAt,
+	}
+
+	// Simulate APRS-IS winning the Hybrid race before the same radio-heard copy.
+	if manager.duplicate(position.Raw, packetAt) {
+		t.Fatal("first packet was unexpectedly treated as a duplicate")
+	}
+	manager.processLocalPosition(manager.localConfig(), position, packetAt)
+
+	stations := manager.Activity()
+	if len(stations) != 1 || stations[0].Callsign != "N0LOCAL-7" || stations[0].Source != "local_rf" {
+		t.Fatalf("radio-heard position was not displayed after cross-source dedup: %+v", stations)
+	}
+	status := manager.Status().Local
+	if status.PositionsDisplayed != 1 {
+		t.Fatalf("local displayed positions = %d, want 1", status.PositionsDisplayed)
 	}
 }
 

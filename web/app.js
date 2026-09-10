@@ -1451,7 +1451,7 @@ function renderAPRSStatus() {
   if (status.server) details.push(status.server);
   if (status.filter) details.push(status.filter);
   const internetCounts = `${status.packets_received || 0} packets · ${status.position_packets_decoded || 0} positions · ${status.positions_updated || 0} responder updates`;
-  const localCounts = `${local.packets_received || 0} packets · ${local.position_packets_decoded || 0} positions · ${local.positions_updated || 0} responder updates`;
+  const localCounts = `${local.packets_received || 0} packets · ${local.position_packets_decoded || 0} positions · ${local.positions_displayed || 0} map positions · ${local.positions_updated || 0} responder updates`;
   const decoderDetails = [];
   if (local.decoder === "bundled") {
     decoderDetails.push(local.decoder_available ? "Decoder installed" : "Decoder unavailable");

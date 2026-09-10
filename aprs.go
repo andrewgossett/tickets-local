@@ -694,34 +694,45 @@ func (manager *APRSManager) connectAndReadLocal(ctx context.Context, config loca
 		manager.updateLocalStatus(func(status *APRSLocalStatus) {
 			status.PositionPacketsDecoded++
 		})
-		if manager.duplicate(position.Raw, packetAt) {
-			return
-		}
-		if _, tracked := config.callsign[position.Callsign]; tracked {
-			_, updated, err := manager.store.RecordAPRSPosition(position, "local_rf")
-			if err != nil {
-				manager.logger.Printf("save local APRS position for %s: %v", position.Callsign, err)
-			} else if updated {
-				manager.updateLocalStatus(func(status *APRSLocalStatus) {
-					status.LastPositionAt = &packetAt
-					status.PositionsUpdated++
-				})
-			}
-		}
-		inConfiguredArea := config.areaEnabled && distanceKilometers(
-			config.areaLatitude,
-			config.areaLongitude,
-			position.Latitude,
-			position.Longitude,
-		) <= config.areaRadiusKM
-		if config.showAll || inConfiguredArea {
-			manager.recordActivity(position, "local_rf")
-		}
+		manager.processLocalPosition(config, position, packetAt)
 	})
 	if manager.generation.Load() != generation || manager.localConfig().key != config.key {
 		return errors.New("local APRS configuration changed")
 	}
 	return err
+}
+
+func (manager *APRSManager) processLocalPosition(config localAPRSRuntimeConfig, position APRSPosition, packetAt time.Time) {
+	inConfiguredArea := config.areaEnabled && distanceKilometers(
+		config.areaLatitude,
+		config.areaLongitude,
+		position.Latitude,
+		position.Longitude,
+	) <= config.areaRadiusKM
+	if config.showAll || inConfiguredArea {
+		// A packet heard directly over RF must remain visible even when Hybrid mode
+		// already received the same packet from APRS-IS. Cross-source deduplication
+		// prevents duplicate responder tracks, not local station awareness.
+		manager.recordActivity(position, "local_rf")
+		manager.updateLocalStatus(func(status *APRSLocalStatus) {
+			status.PositionsDisplayed++
+		})
+	}
+	if manager.duplicate(position.Raw, packetAt) {
+		return
+	}
+	if _, tracked := config.callsign[position.Callsign]; !tracked {
+		return
+	}
+	_, updated, err := manager.store.RecordAPRSPosition(position, "local_rf")
+	if err != nil {
+		manager.logger.Printf("save local APRS position for %s: %v", position.Callsign, err)
+	} else if updated {
+		manager.updateLocalStatus(func(status *APRSLocalStatus) {
+			status.LastPositionAt = &packetAt
+			status.PositionsUpdated++
+		})
+	}
 }
 
 func (manager *APRSManager) connectLocalKISS(ctx context.Context, config localAPRSRuntimeConfig, decoderDone <-chan error) (net.Conn, error) {
