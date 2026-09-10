@@ -9,6 +9,7 @@ direwolf_source_sha256="89d5f7992ae1e74d8cf26ec6479dde74d1f480bde950043756e875a6
 kit_name="Tickets-Local-${version}-macOS-Signing-Kit"
 kit_dir="$dist_dir/$kit_name"
 archive_path="$dist_dir/$kit_name.zip"
+source_cache_dir="${TICKETS_LOCAL_SOURCE_CACHE:-$project_dir/.tools/source-cache}"
 amd64_binary=""
 arm64_binary=""
 temp_dir=""
@@ -107,8 +108,17 @@ download_source() {
   local url="$2"
   local expected_sha256="$3"
   local destination="$kit_dir/Resources/Third-Party-Source/$name"
+  local cached="$source_cache_dir/$name"
   local actual_sha256
-  curl -fL "$url" -o "$destination"
+  mkdir -p "$source_cache_dir"
+  if [[ -f "$cached" ]]; then
+    actual_sha256="$({ command -v sha256sum >/dev/null 2>&1 && sha256sum "$cached" || shasum -a 256 "$cached"; } | awk '{print $1}')"
+  fi
+  if [[ "${actual_sha256:-}" != "$expected_sha256" ]]; then
+    rm -f "$cached"
+    curl -fL --retry 3 --retry-delay 2 "$url" -o "$cached"
+  fi
+  cp "$cached" "$destination"
   actual_sha256="$(
   if command -v sha256sum >/dev/null 2>&1; then
       sha256sum "$destination" | awk '{print $1}'

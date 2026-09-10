@@ -106,6 +106,11 @@ func TestMacReleaseCarriesPinnedThirdPartyComplianceFiles(t *testing.T) {
 			t.Errorf("macOS signing kit is missing pinned source %q", required)
 		}
 	}
+	for _, required := range []string{"TICKETS_LOCAL_SOURCE_CACHE", "--retry 3", "expected_sha256"} {
+		if !strings.Contains(kit, required) {
+			t.Errorf("macOS signing kit is missing resilient source-download behavior %q", required)
+		}
+	}
 	for _, required := range []string{"THIRD-PARTY-NOTICES.md", "Third-Party-Source", "-eq 6"} {
 		if !strings.Contains(signing, required) {
 			t.Errorf("macOS signing workflow is missing compliance guard %q", required)
