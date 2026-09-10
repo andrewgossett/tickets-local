@@ -774,14 +774,16 @@ func (s *Store) CreateOverlay(input MapOverlayInput) (MapOverlay, error) {
 
 	now := time.Now().UTC()
 	overlay := MapOverlay{
-		ID:        newID("ovl"),
-		Name:      clean(input.Name),
-		FileName:  clean(input.FileName),
-		Color:     normalizeOverlayColor(input.Color),
-		Visible:   input.Visible,
-		Features:  input.Features,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:           newID("ovl"),
+		Name:         clean(input.Name),
+		FileName:     clean(input.FileName),
+		Color:        normalizeOverlayColor(input.Color),
+		UseKMLStyles: input.UseKMLStyles,
+		Opacity:      normalizeOverlayOpacity(input.Opacity),
+		Visible:      input.Visible,
+		Features:     normalizeOverlayFeatures(input.Features),
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 	verb := "imported"
 	if overlay.FileName == "Map drawing" {
@@ -997,6 +999,8 @@ func (s *Store) UpdateOverlay(id string, input MapOverlayUpdateInput) (MapOverla
 	}
 	overlay.Name = clean(input.Name)
 	overlay.Color = normalizeOverlayColor(input.Color)
+	overlay.UseKMLStyles = input.UseKMLStyles
+	overlay.Opacity = normalizeOverlayOpacity(input.Opacity)
 	overlay.Visible = input.Visible
 	overlay.UpdatedAt = time.Now().UTC()
 	activity := newActivity("overlay.updated", fmt.Sprintf("Map overlay updated: %s", overlay.Name), "overlay", overlay.ID)
@@ -1661,6 +1665,9 @@ func validateOverlayInput(input MapOverlayInput) error {
 	if !validOverlayColor(input.Color) {
 		return validationError{"overlay color must be a six-digit hex color"}
 	}
+	if !validOverlayOpacity(input.Opacity) {
+		return validationError{"overlay opacity must be between 10 and 100 percent"}
+	}
 	if len(input.Features) == 0 {
 		return validationError{"KML file does not contain supported map geometry"}
 	}
@@ -1674,6 +1681,12 @@ func validateOverlayInput(input MapOverlayInput) error {
 		}
 		if len(feature.Name) > 300 || len(feature.Paths) == 0 {
 			return validationError{"overlay contains an invalid feature"}
+		}
+		if len(feature.Description) > 1000 {
+			return validationError{"overlay feature descriptions must be 1,000 characters or fewer"}
+		}
+		if feature.Color != "" && !validOverlayColor(feature.Color) {
+			return validationError{"overlay feature contains an invalid color"}
 		}
 		for _, path := range feature.Paths {
 			if len(path) == 0 {
@@ -1693,6 +1706,19 @@ func validateOverlayInput(input MapOverlayInput) error {
 	return nil
 }
 
+func normalizeOverlayFeatures(features []OverlayFeature) []OverlayFeature {
+	result := make([]OverlayFeature, len(features))
+	copy(result, features)
+	for index := range result {
+		result[index].Name = abbreviate(clean(result[index].Name), 160)
+		result[index].Description = abbreviate(strings.TrimSpace(result[index].Description), 1000)
+		if result[index].Color != "" {
+			result[index].Color = normalizeOverlayColor(result[index].Color)
+		}
+	}
+	return result
+}
+
 func validateOverlayUpdateInput(input MapOverlayUpdateInput) error {
 	if clean(input.Name) == "" || len(input.Name) > 160 {
 		return validationError{"overlay name is required and must be 160 characters or fewer"}
@@ -1700,7 +1726,21 @@ func validateOverlayUpdateInput(input MapOverlayUpdateInput) error {
 	if !validOverlayColor(input.Color) {
 		return validationError{"overlay color must be a six-digit hex color"}
 	}
+	if !validOverlayOpacity(input.Opacity) {
+		return validationError{"overlay opacity must be between 10 and 100 percent"}
+	}
 	return nil
+}
+
+func validOverlayOpacity(value int) bool {
+	return value == 0 || (value >= 10 && value <= 100)
+}
+
+func normalizeOverlayOpacity(value int) int {
+	if value == 0 {
+		return 100
+	}
+	return value
 }
 
 func validOverlayColor(value string) bool {

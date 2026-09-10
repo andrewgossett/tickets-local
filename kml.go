@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -14,8 +16,15 @@ const maxKMLBytes = 5 << 20
 
 type xmlNode struct {
 	XMLName  xml.Name
-	Text     string    `xml:",chardata"`
-	Children []xmlNode `xml:",any"`
+	Attrs    []xml.Attr `xml:",any,attr"`
+	Text     string     `xml:",chardata"`
+	Children []xmlNode  `xml:",any"`
+}
+
+type kmlStyleColors struct {
+	point   string
+	line    string
+	polygon string
 }
 
 func parseKML(reader io.Reader, fileName string) (MapOverlayInput, error) {
@@ -47,20 +56,24 @@ func parseKML(reader io.Reader, fileName string) (MapOverlayInput, error) {
 		overlayName = "Map overlay"
 	}
 
+	styles, styleMaps := collectKMLStyles(root)
 	features := make([]OverlayFeature, 0)
 	visitNodes(root, func(node xmlNode) {
 		if node.XMLName.Local != "Placemark" {
 			return
 		}
 		name := directChildText(node, "name")
-		collectGeometries(node, name, &features)
+		description := placemarkDescription(node)
+		style := resolvePlacemarkStyle(node, styles, styleMaps)
+		collectGeometries(node, name, description, style, &features)
 	})
 	input := MapOverlayInput{
-		Name:     abbreviate(clean(overlayName), 160),
-		FileName: abbreviate(clean(filepath.Base(fileName)), 255),
-		Color:    "#A78BFA",
-		Visible:  true,
-		Features: features,
+		Name:         abbreviate(clean(overlayName), 160),
+		FileName:     abbreviate(clean(filepath.Base(fileName)), 255),
+		Color:        "#A78BFA",
+		UseKMLStyles: slices.ContainsFunc(features, func(feature OverlayFeature) bool { return feature.Color != "" }),
+		Visible:      true,
+		Features:     features,
 	}
 	if err := validateOverlayInput(input); err != nil {
 		return MapOverlayInput{}, err
@@ -68,31 +81,150 @@ func parseKML(reader io.Reader, fileName string) (MapOverlayInput, error) {
 	return input, nil
 }
 
-func collectGeometries(node xmlNode, featureName string, features *[]OverlayFeature) {
+func collectGeometries(node xmlNode, featureName, description string, style kmlStyleColors, features *[]OverlayFeature) {
 	for _, child := range node.Children {
 		switch child.XMLName.Local {
 		case "Point":
 			if path, err := coordinatesFromNode(child); err == nil && len(path) > 0 {
-				*features = append(*features, OverlayFeature{Name: featureName, GeometryType: "point", Paths: [][]MapCoordinate{path}})
+				*features = append(*features, OverlayFeature{Name: featureName, Description: description, Color: style.point, GeometryType: "point", Paths: [][]MapCoordinate{path}})
 			}
 		case "LineString":
 			if path, err := coordinatesFromNode(child); err == nil && len(path) > 1 {
-				*features = append(*features, OverlayFeature{Name: featureName, GeometryType: "line", Paths: [][]MapCoordinate{path}})
+				*features = append(*features, OverlayFeature{Name: featureName, Description: description, Color: style.line, GeometryType: "line", Paths: [][]MapCoordinate{path}})
 			}
 		case "Polygon":
 			paths := polygonPaths(child)
 			if len(paths) > 0 {
-				*features = append(*features, OverlayFeature{Name: featureName, GeometryType: "polygon", Paths: paths})
+				*features = append(*features, OverlayFeature{Name: featureName, Description: description, Color: style.polygon, GeometryType: "polygon", Paths: paths})
 			}
 		case "Track":
 			path := trackCoordinates(child)
 			if len(path) > 1 {
-				*features = append(*features, OverlayFeature{Name: featureName, GeometryType: "line", Paths: [][]MapCoordinate{path}})
+				*features = append(*features, OverlayFeature{Name: featureName, Description: description, Color: style.line, GeometryType: "line", Paths: [][]MapCoordinate{path}})
 			}
 		default:
-			collectGeometries(child, featureName, features)
+			collectGeometries(child, featureName, description, style, features)
 		}
 	}
+}
+
+func collectKMLStyles(root xmlNode) (map[string]kmlStyleColors, map[string]string) {
+	styles := make(map[string]kmlStyleColors)
+	styleMaps := make(map[string]string)
+	visitNodes(root, func(node xmlNode) {
+		id := attribute(node, "id")
+		if id == "" {
+			return
+		}
+		switch node.XMLName.Local {
+		case "Style":
+			styles[id] = colorsFromStyle(node)
+		case "StyleMap":
+			for _, pair := range node.Children {
+				if pair.XMLName.Local == "Pair" && directChildText(pair, "key") == "normal" {
+					styleMaps[id] = strings.TrimPrefix(directChildText(pair, "styleUrl"), "#")
+				}
+			}
+		}
+	})
+	return styles, styleMaps
+}
+
+func resolvePlacemarkStyle(node xmlNode, styles map[string]kmlStyleColors, styleMaps map[string]string) kmlStyleColors {
+	for _, child := range node.Children {
+		if child.XMLName.Local == "Style" {
+			return colorsFromStyle(child)
+		}
+	}
+	styleID := strings.TrimPrefix(directChildText(node, "styleUrl"), "#")
+	if mapped := styleMaps[styleID]; mapped != "" {
+		styleID = mapped
+	}
+	return styles[styleID]
+}
+
+func colorsFromStyle(node xmlNode) kmlStyleColors {
+	return kmlStyleColors{
+		point:   styleColor(node, "IconStyle"),
+		line:    styleColor(node, "LineStyle"),
+		polygon: firstNonEmpty(styleColor(node, "PolyStyle"), styleColor(node, "LineStyle")),
+	}
+}
+
+func styleColor(node xmlNode, styleName string) string {
+	style := firstDescendant(node, styleName)
+	if style == nil {
+		return ""
+	}
+	return kmlColor(directChildText(*style, "color"))
+}
+
+func kmlColor(value string) string {
+	value = strings.TrimSpace(strings.TrimPrefix(value, "#"))
+	if len(value) == 8 { // KML uses alpha-blue-green-red.
+		value = value[6:8] + value[4:6] + value[2:4]
+	}
+	if len(value) != 6 {
+		return ""
+	}
+	for _, character := range value {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", character) {
+			return ""
+		}
+	}
+	return "#" + strings.ToLower(value)
+}
+
+func placemarkDescription(node xmlNode) string {
+	parts := make([]string, 0, 4)
+	if description := directChildText(node, "description"); description != "" {
+		parts = append(parts, description)
+	}
+	for _, data := range descendants(node, "Data") {
+		name := attribute(data, "name")
+		value := directChildText(data, "value")
+		if name != "" && value != "" {
+			parts = append(parts, name+": "+value)
+		}
+	}
+	return abbreviate(cleanKMLText(strings.Join(parts, " · ")), 1000)
+}
+
+func cleanKMLText(value string) string {
+	value = html.UnescapeString(value)
+	var output strings.Builder
+	inTag := false
+	for _, character := range value {
+		switch character {
+		case '<':
+			inTag = true
+		case '>':
+			inTag = false
+		default:
+			if !inTag {
+				output.WriteRune(character)
+			}
+		}
+	}
+	return strings.Join(strings.Fields(output.String()), " ")
+}
+
+func attribute(node xmlNode, localName string) string {
+	for _, attribute := range node.Attrs {
+		if attribute.Name.Local == localName {
+			return clean(attribute.Value)
+		}
+	}
+	return ""
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func polygonPaths(node xmlNode) [][]MapCoordinate {

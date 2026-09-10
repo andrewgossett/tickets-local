@@ -2782,10 +2782,13 @@ function renderOverlayList() {
   $("#overlay-list").innerHTML = overlays.length
     ? overlays.map(overlay => {
       const points = overlay.features.reduce((sum, feature) => sum + feature.paths.reduce((pathSum, path) => pathSum + path.length, 0), 0);
+      const hasKMLColors = overlay.file_name !== "Map drawing" && overlay.features.some(feature => feature.color);
       return `<div class="overlay-row" data-overlay-id="${attr(overlay.id)}">
         <input class="overlay-toggle" type="checkbox" aria-label="Show ${attr(overlay.name)}" ${overlay.visible ? "checked" : ""}>
         <div class="overlay-copy"><strong>${html(overlay.name)}</strong><small>${html(overlay.file_name)} · ${overlay.features.length} features · ${points.toLocaleString()} points</small></div>
         <input class="overlay-color" type="color" value="${attr(overlay.color)}" aria-label="Color for ${attr(overlay.name)}">
+        ${hasKMLColors ? `<label class="overlay-kml-style"><input class="overlay-kml-colors" type="checkbox" ${overlay.use_kml_styles ? "checked" : ""}> Use KML colors</label>` : ""}
+        ${overlay.file_name !== "Map drawing" ? `<label class="overlay-opacity"><span>Opacity</span><input class="overlay-opacity-range" type="range" min="10" max="100" step="5" value="${Number(overlay.opacity) || 100}" aria-label="Opacity for ${attr(overlay.name)}"><output>${Number(overlay.opacity) || 100}%</output></label>` : ""}
         <button class="row-action overlay-zoom" type="button" data-overlay-action="zoom">Zoom</button>
         <button class="row-action overlay-delete" type="button" data-overlay-action="delete" aria-label="Delete ${attr(overlay.name)}">Delete</button>
       </div>`;
@@ -2820,13 +2823,17 @@ async function importKML(event) {
 }
 
 async function updateOverlayFromEvent(event) {
-  if (!event.target.matches(".overlay-toggle, .overlay-color")) return;
+  if (!event.target.matches(".overlay-toggle, .overlay-color, .overlay-kml-colors, .overlay-opacity-range")) return;
   const row = event.target.closest("[data-overlay-id]");
   const overlay = (app.state.overlays || []).find(item => item.id === row?.dataset.overlayId);
   if (!row || !overlay) return;
+  const kmlColors = $(".overlay-kml-colors", row);
+  if (event.target.matches(".overlay-color") && kmlColors) kmlColors.checked = false;
   const payload = {
     name: overlay.name,
     color: $(".overlay-color", row).value,
+    use_kml_styles: Boolean(kmlColors?.checked),
+    opacity: Number($(".overlay-opacity-range", row)?.value || overlay.opacity || 100),
     visible: $(".overlay-toggle", row).checked,
     expected_updated_at: overlay.updated_at
   };
@@ -2849,7 +2856,7 @@ async function overlayActionFromEvent(event) {
     if (!overlay.visible) {
       await api(`/api/overlays/${encodeURIComponent(overlay.id)}`, {
         method: "PUT",
-        body: { name: overlay.name, color: overlay.color, visible: true, expected_updated_at: overlay.updated_at }
+        body: { name: overlay.name, color: overlay.color, use_kml_styles: Boolean(overlay.use_kml_styles), opacity: Number(overlay.opacity) || 100, visible: true, expected_updated_at: overlay.updated_at }
       });
       await loadState();
     }
@@ -4027,6 +4034,19 @@ class SituationMap {
         shape.append(title);
       };
       overlay.features.forEach(feature => {
+        const featureColor = overlay.use_kml_styles && feature.color ? feature.color : overlay.color;
+        const overlayOpacity = Math.max(0.1, Math.min(1, (Number(overlay.opacity) || 100) / 100));
+        const featureDetails = [feature.name || overlay.name, feature.description].filter(Boolean).join(" — ");
+        const makeKMLInteractive = shape => {
+          if (overlay.file_name === "Map drawing") return;
+          shape.classList.add("map-kml-feature");
+          shape.setAttribute("tabindex", "0");
+          shape.setAttribute("role", "img");
+          shape.setAttribute("aria-label", featureDetails);
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+          title.textContent = featureDetails;
+          shape.append(title);
+        };
         if (feature.geometry_type === "point") {
           feature.paths.flat().forEach(coordinate => {
             const point = toScreen(coordinate);
@@ -4034,9 +4054,11 @@ class SituationMap {
             marker.setAttribute("cx", point.x);
             marker.setAttribute("cy", point.y);
             marker.setAttribute("r", "5");
-            marker.setAttribute("fill", overlay.color);
+            marker.setAttribute("fill", featureColor);
+            marker.setAttribute("fill-opacity", overlayOpacity);
             marker.setAttribute("class", "overlay-point");
             makeDrawingInteractive(marker);
+            makeKMLInteractive(marker);
             this.trailLayer.append(marker);
           });
           return;
@@ -4049,9 +4071,11 @@ class SituationMap {
               const point = toScreen(coordinate);
               return `${point.x},${point.y}`;
             }).join(" "));
-            line.setAttribute("stroke", overlay.color);
+            line.setAttribute("stroke", featureColor);
+            line.setAttribute("stroke-opacity", overlayOpacity);
             line.setAttribute("class", "overlay-line");
             makeDrawingInteractive(line);
+            makeKMLInteractive(line);
             this.trailLayer.append(line);
           });
           return;
@@ -4064,10 +4088,13 @@ class SituationMap {
           if (!pathData.trim()) return;
           const polygon = document.createElementNS("http://www.w3.org/2000/svg", "path");
           polygon.setAttribute("d", pathData);
-          polygon.setAttribute("stroke", overlay.color);
-          polygon.setAttribute("fill", overlay.color);
+          polygon.setAttribute("stroke", featureColor);
+          polygon.setAttribute("fill", featureColor);
+          polygon.setAttribute("stroke-opacity", overlayOpacity);
+          polygon.setAttribute("fill-opacity", overlayOpacity * 0.22);
           polygon.setAttribute("class", "overlay-polygon");
           makeDrawingInteractive(polygon);
+          makeKMLInteractive(polygon);
           this.trailLayer.append(polygon);
         }
       });

@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.10"
+	version     = "0.5.11"
 )
 
 type State struct {
@@ -448,18 +448,22 @@ type Location struct {
 }
 
 type MapOverlay struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	FileName  string           `json:"file_name"`
-	Color     string           `json:"color"`
-	Visible   bool             `json:"visible"`
-	Features  []OverlayFeature `json:"features"`
-	CreatedAt time.Time        `json:"created_at"`
-	UpdatedAt time.Time        `json:"updated_at"`
+	ID           string           `json:"id"`
+	Name         string           `json:"name"`
+	FileName     string           `json:"file_name"`
+	Color        string           `json:"color"`
+	UseKMLStyles bool             `json:"use_kml_styles"`
+	Opacity      int              `json:"opacity"`
+	Visible      bool             `json:"visible"`
+	Features     []OverlayFeature `json:"features"`
+	CreatedAt    time.Time        `json:"created_at"`
+	UpdatedAt    time.Time        `json:"updated_at"`
 }
 
 type OverlayFeature struct {
 	Name         string            `json:"name"`
+	Description  string            `json:"description,omitempty"`
+	Color        string            `json:"color,omitempty"`
 	GeometryType string            `json:"geometry_type"`
 	Paths        [][]MapCoordinate `json:"paths"`
 }
@@ -649,16 +653,20 @@ type LocationInput struct {
 }
 
 type MapOverlayInput struct {
-	Name     string           `json:"name"`
-	FileName string           `json:"file_name"`
-	Color    string           `json:"color"`
-	Visible  bool             `json:"visible"`
-	Features []OverlayFeature `json:"features"`
+	Name         string           `json:"name"`
+	FileName     string           `json:"file_name"`
+	Color        string           `json:"color"`
+	UseKMLStyles bool             `json:"use_kml_styles"`
+	Opacity      int              `json:"opacity"`
+	Visible      bool             `json:"visible"`
+	Features     []OverlayFeature `json:"features"`
 }
 
 type MapOverlayUpdateInput struct {
 	Name              string     `json:"name"`
 	Color             string     `json:"color"`
+	UseKMLStyles      bool       `json:"use_kml_styles"`
+	Opacity           int        `json:"opacity"`
 	Visible           bool       `json:"visible"`
 	ExpectedUpdatedAt *time.Time `json:"expected_updated_at,omitempty"`
 }

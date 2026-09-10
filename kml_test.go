@@ -10,8 +10,11 @@ func TestParseKMLSupportedGeometry(t *testing.T) {
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <name>County Operations</name>
-    <Placemark><name>Command</name><Point><coordinates>-86.70,35.90,0</coordinates></Point></Placemark>
-    <Placemark><name>Route A</name><LineString><coordinates>-86.70,35.90 -86.71,35.91</coordinates></LineString></Placemark>
+    <Style id="command"><IconStyle><color>ff0000ff</color></IconStyle></Style>
+    <Style id="route"><LineStyle><color>ff00ff00</color></LineStyle></Style>
+    <StyleMap id="route-map"><Pair><key>normal</key><styleUrl>#route</styleUrl></Pair></StyleMap>
+    <Placemark><name>Command</name><description><![CDATA[<b>Primary command post</b>]]></description><ExtendedData><Data name="Contact"><value>Operations</value></Data></ExtendedData><styleUrl>#command</styleUrl><Point><coordinates>-86.70,35.90,0</coordinates></Point></Placemark>
+    <Placemark><name>Route A</name><styleUrl>#route-map</styleUrl><LineString><coordinates>-86.70,35.90 -86.71,35.91</coordinates></LineString></Placemark>
     <Placemark><name>Boundary</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-86.7,35.9 -86.8,35.9 -86.8,36.0 -86.7,35.9</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
     <Placemark><name>Track</name><gx:Track><gx:coord>-86.70 35.90 0</gx:coord><gx:coord>-86.71 35.91 0</gx:coord></gx:Track></Placemark>
   </Document>
@@ -24,6 +27,12 @@ func TestParseKMLSupportedGeometry(t *testing.T) {
 	}
 	if len(input.Features) != 4 {
 		t.Fatalf("feature count = %d, want 4: %+v", len(input.Features), input.Features)
+	}
+	if !input.UseKMLStyles || input.Features[0].Color != "#ff0000" || input.Features[1].Color != "#00ff00" {
+		t.Fatalf("KML style colors were not retained: %+v", input.Features)
+	}
+	if input.Features[0].Description != "Primary command post · Contact: Operations" {
+		t.Fatalf("KML description was not retained as safe text: %q", input.Features[0].Description)
 	}
 	gotTypes := []string{input.Features[0].GeometryType, input.Features[1].GeometryType, input.Features[2].GeometryType, input.Features[3].GeometryType}
 	if strings.Join(gotTypes, ",") != "point,line,polygon,line" {

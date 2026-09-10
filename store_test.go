@@ -274,9 +274,9 @@ func TestStoreRetainsMultipleLocationsAndOverlayAfterReplay(t *testing.T) {
 		t.Fatalf("locations received the same ID %q", first.ID)
 	}
 	overlay, err := store.CreateOverlay(MapOverlayInput{
-		Name: "Evacuation Route", FileName: "route.kml", Color: "#FF6600", Visible: true,
+		Name: "Evacuation Route", FileName: "route.kml", Color: "#FF6600", UseKMLStyles: true, Opacity: 65, Visible: true,
 		Features: []OverlayFeature{{
-			Name: "Route A", GeometryType: "line", Paths: [][]MapCoordinate{{
+			Name: "Route A", Description: "Primary route", Color: "#00FF00", GeometryType: "line", Paths: [][]MapCoordinate{{
 				{Latitude: lat1, Longitude: lon1},
 				{Latitude: lat2, Longitude: lon2},
 			}},
@@ -285,7 +285,7 @@ func TestStoreRetainsMultipleLocationsAndOverlayAfterReplay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = store.UpdateOverlay(overlay.ID, MapOverlayUpdateInput{Name: overlay.Name, Color: "#00AAFF", Visible: false}); err != nil {
+	if _, err = store.UpdateOverlay(overlay.ID, MapOverlayUpdateInput{Name: overlay.Name, Color: "#00AAFF", UseKMLStyles: true, Opacity: 65, Visible: false}); err != nil {
 		t.Fatal(err)
 	}
 	settings := store.Snapshot().Settings
@@ -308,7 +308,9 @@ func TestStoreRetainsMultipleLocationsAndOverlayAfterReplay(t *testing.T) {
 	if len(replayedState.Locations) != 2 || len(replayedState.Overlays) != 1 {
 		t.Fatalf("replay lost map records: %+v", replayedState)
 	}
-	if replayedState.Overlays[0].Visible || replayedState.Overlays[0].Color != "#00AAFF" {
+	if replayedState.Overlays[0].Visible || replayedState.Overlays[0].Color != "#00AAFF" ||
+		!replayedState.Overlays[0].UseKMLStyles || replayedState.Overlays[0].Opacity != 65 || replayedState.Overlays[0].Features[0].Color != "#00FF00" ||
+		replayedState.Overlays[0].Features[0].Description != "Primary route" {
 		t.Fatalf("overlay metadata update was not replayed: %+v", replayedState.Overlays[0])
 	}
 	if replayedState.Settings.CenterAddress != "100 Emergency Operations Way" {

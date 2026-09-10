@@ -1,6 +1,6 @@
 # Third-party software notices
 
-Tickets Local 0.5.10 can bundle the following unmodified components in its
+Tickets Local 0.5.11 can bundle the following unmodified components in its
 signed macOS package. Complete corresponding upstream source archives,
 including copyright and license files, are included under
 `Contents/Resources/Third-Party-Source` in the application bundle.

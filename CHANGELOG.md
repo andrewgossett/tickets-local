@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Imported KML overlays now honor embedded point, line, and polygon colors and
+  show cleaned KML descriptions when a feature is hovered or keyboard-focused.
+  Operators can override the entire file with a selected color, restore its
+  embedded colors with the **Use KML colors** switch, and adjust the overlay's
+  opacity.
+
 - Fixed Local RF/Dire Wolf station visibility in Hybrid mode. A position packet
   decoded directly from radio now appears as a local station even when the same
   packet reached APRS-IS first; cross-source deduplication still prevents a

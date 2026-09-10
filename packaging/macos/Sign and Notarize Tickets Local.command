@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 app_name="Tickets Local"
-version="0.5.10"
+version="0.5.11"
 direwolf_version="1.8.1"
 bundle_id="org.openises.tickets-local"
 notary_profile="${NOTARY_PROFILE:-TicketsLocal-Notary}"

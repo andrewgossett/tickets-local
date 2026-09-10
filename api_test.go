@@ -92,7 +92,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.10`,
+		`Version 0.5.11`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -187,6 +187,14 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(scriptText, `data-overlay-action="delete" aria-label="Delete ${attr(overlay.name)}">Delete</button>`) ||
 		!strings.Contains(scriptText, `Click a shape to delete · Manage drawings for a list`) {
 		t.Fatal("saved drawings do not expose an obvious map and list deletion workflow")
+	}
+	if !strings.Contains(scriptText, `const featureColor = overlay.use_kml_styles && feature.color ? feature.color : overlay.color`) ||
+		!strings.Contains(scriptText, `const overlayOpacity = Math.max(0.1, Math.min(1`) ||
+		!strings.Contains(scriptText, `class="overlay-opacity-range"`) ||
+		!strings.Contains(scriptText, `shape.classList.add("map-kml-feature")`) ||
+		!strings.Contains(scriptText, `title.textContent = featureDetails`) ||
+		!strings.Contains(stylesText, `.map-kml-feature { pointer-events: visiblePainted; cursor: help; }`) {
+		t.Fatal("KML colors and hover descriptions are not rendered")
 	}
 	if !strings.Contains(scriptText, `else toast(mapPointKindLabel(point.kind), point.label)`) ||
 		!strings.Contains(scriptText, `polygon.dataset.weatherAlertLabel = alertLabel`) ||
@@ -488,7 +496,7 @@ func TestAPILocationsAndKMLOverlay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = io.WriteString(file, `<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Route Plan</name><Placemark><LineString><coordinates>-86.7,35.9 -86.8,36.0</coordinates></LineString></Placemark></Document></kml>`)
+	_, _ = io.WriteString(file, `<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Route Plan</name><Style id="route"><LineStyle><color>ff00ff00</color></LineStyle></Style><Placemark><name>Evacuation route</name><description>Primary outbound route</description><styleUrl>#route</styleUrl><LineString><coordinates>-86.7,35.9 -86.8,36.0</coordinates></LineString></Placemark></Document></kml>`)
 	_ = writer.WriteField("color", "#3366FF")
 	if err = writer.Close(); err != nil {
 		t.Fatal(err)
@@ -512,7 +520,9 @@ func TestAPILocationsAndKMLOverlay(t *testing.T) {
 	if len(state.Locations) != 2 || len(state.Overlays) != 1 {
 		t.Fatalf("unexpected map state: locations=%+v overlays=%+v", state.Locations, state.Overlays)
 	}
-	if state.Overlays[0].Name != "Route Plan" || state.Overlays[0].Color != "#3366FF" {
+	if state.Overlays[0].Name != "Route Plan" || state.Overlays[0].Color != "#3366FF" ||
+		!state.Overlays[0].UseKMLStyles || state.Overlays[0].Features[0].Color != "#00FF00" ||
+		state.Overlays[0].Features[0].Description != "Primary outbound route" {
 		t.Fatalf("unexpected imported overlay: %+v", state.Overlays[0])
 	}
 

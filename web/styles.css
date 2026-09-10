@@ -354,6 +354,8 @@ tbody tr.incident-needs-update:hover { background: rgba(251, 191, 36, .11); }
 .overlay-polygon { stroke-width: 2; stroke-linejoin: round; fill-opacity: .18; stroke-opacity: .9; fill-rule: evenodd; }
 .overlay-point { stroke: white; stroke-width: 1.5; }
 .map-drawn-overlay { pointer-events: visiblePainted; cursor: pointer; }
+.map-kml-feature { pointer-events: visiblePainted; cursor: help; }
+.map-kml-feature:hover, .map-kml-feature:focus { filter: drop-shadow(0 0 4px rgba(255, 255, 255, .95)); outline: none; }
 .map-drawn-overlay:hover, .map-drawn-overlay:focus { filter: drop-shadow(0 0 4px rgba(255, 255, 255, .9)); outline: none; }
 .map-grid-fallback {
   opacity: .55;
@@ -719,13 +721,18 @@ body.map-window-mode [data-map-expand] { display: none !important; }
 .overlay-import input[type="color"] { height: 38px; padding: 4px; }
 .overlay-list { display: grid; gap: 8px; padding: 0 18px 18px; }
 .overlay-empty { border: 1px dashed var(--border); border-radius: 8px; padding: 14px; color: var(--muted); font-size: 11px; text-align: center; }
-.overlay-row { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 10px; align-items: center; border: 1px solid var(--border-soft); border-radius: 9px; padding: 10px; background: var(--surface-2); }
+.overlay-row { display: grid; grid-template-columns: auto minmax(150px, 1fr) auto auto minmax(115px, .5fr) auto auto; gap: 10px; align-items: center; border: 1px solid var(--border-soft); border-radius: 9px; padding: 10px; background: var(--surface-2); }
 .overlay-row .overlay-toggle { width: 17px; height: 17px; margin: 0; accent-color: var(--primary); }
 .overlay-row .overlay-copy { min-width: 0; }
 .overlay-row strong, .overlay-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .overlay-row strong { color: var(--text); font-size: 11px; }
 .overlay-row small { color: var(--muted-2); font-size: 9px; }
 .overlay-row input[type="color"] { width: 34px; height: 30px; padding: 3px; }
+.overlay-row .overlay-kml-style { display: flex; align-items: center; gap: 5px; color: var(--muted-2); font-size: 9px; white-space: nowrap; }
+.overlay-row .overlay-kml-style input { width: 15px; height: 15px; margin: 0; accent-color: var(--primary); }
+.overlay-row .overlay-opacity { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 5px; color: var(--muted-2); font-size: 9px; white-space: nowrap; }
+.overlay-row .overlay-opacity input { min-width: 60px; accent-color: var(--primary); }
+.overlay-row .overlay-opacity output { width: 30px; color: var(--text); text-align: right; }
 .overlay-row .row-action { font-size: 10px; }
 .data-card { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 18px; }
 .data-card > .secondary-button { grid-column: 1 / -1; }
