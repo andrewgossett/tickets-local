@@ -101,7 +101,7 @@ for checksums, release notes, and every available package.
 
 ### Windows
 
-1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.16/Tickets-Local-0.5.16-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.16/Tickets-Local-0.5.16-Windows-x64-unsigned.zip).
+1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.17/Tickets-Local-0.5.17-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.17/Tickets-Local-0.5.17-Windows-x64-unsigned.zip).
 2. Double-click the downloaded `.exe` or `Tickets Local.exe` inside the ZIP.
 3. The console opens in the default browser.
 4. Keep the executable running while using the application.
