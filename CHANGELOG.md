@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Removed the browser-native map-marker tooltip that duplicated the app's
+  styled hover label. Map markers retain their accessible names and show one
+  consistent label when hovered or keyboard-focused.
 - Added explicit responder-position updates to the mobile companion. Enrolled
   phones can use a one-time browser GPS fix or select an address/cross-street
   search result, while device credentials remain scoped to their bound

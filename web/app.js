@@ -3969,7 +3969,6 @@ class SituationMap {
       marker.className = `map-marker ${point.kind}${point.statusClass ? ` ${point.statusClass}` : ""}${point.stale ? " stale" : ""}`;
       marker.style.left = `${left}px`;
       marker.style.top = `${top}px`;
-      marker.title = point.label;
       marker.setAttribute("aria-label", point.label);
       if (point.markerColor) marker.style.setProperty("--marker", point.markerColor);
       marker.innerHTML = `<span>${point.mapLabel ? `<b>${html(point.mapLabel)}</b>` : ""}</span><small class="marker-label">${html(point.label)}</small>`;
