@@ -22,8 +22,8 @@ Tickets Local clients on a trusted private LAN.
 No GitHub account is required. Choose the download for your computer:
 
 - **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.15/Tickets-Local-0.5.15-macOS-universal-notarized.dmg)
-- **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64.exe)
-- **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64-unsigned.zip)
+- **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.15/Tickets-Local-0.5.15-Windows-x64.exe)
+- **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.15/Tickets-Local-0.5.15-Windows-x64-unsigned.zip)
 
 See the [latest release page](https://github.com/andrewgossett/tickets-local/releases/latest)
 for checksums, release notes, and every available package.
@@ -101,7 +101,7 @@ for checksums, release notes, and every available package.
 
 ### Windows
 
-1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64-unsigned.zip).
+1. [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.15/Tickets-Local-0.5.15-Windows-x64.exe), or download and unzip the [portable Windows ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.15/Tickets-Local-0.5.15-Windows-x64-unsigned.zip).
 2. Double-click the downloaded `.exe` or `Tickets Local.exe` inside the ZIP.
 3. The console opens in the default browser.
 4. Keep the executable running while using the application.
