@@ -92,7 +92,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.11`,
+		`Version 0.5.12`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -197,6 +197,7 @@ func TestAPILifecycle(t *testing.T) {
 		t.Fatal("KML colors and hover descriptions are not rendered")
 	}
 	if !strings.Contains(scriptText, `else toast(mapPointKindLabel(point.kind), point.label)`) ||
+		!strings.Contains(scriptText, `spreadOverlappingMapMarkers(visibleMarkers)`) ||
 		!strings.Contains(scriptText, `polygon.dataset.weatherAlertLabel = alertLabel`) ||
 		!strings.Contains(stylesText, `.weather-alert-polygon[data-weather-alert-label] { pointer-events: visiblePainted; cursor: pointer; }`) {
 		t.Fatal("informational map markers or warning polygons are not directly selectable for details")

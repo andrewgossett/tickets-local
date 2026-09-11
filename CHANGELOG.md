@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Preserved the complete APRS `CALL-SSID` as the nearby-station identity and
+  fanned coincident map markers apart, so stations such as `CALL-8` and
+  `CALL-9` remain simultaneously visible even when they report the same point.
+
 - Imported KML overlays now honor embedded point, line, and polygon colors and
   show cleaned KML descriptions when a feature is hovered or keyboard-focused.
   Operators can override the entire file with a selected color, restore its

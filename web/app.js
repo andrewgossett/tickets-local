@@ -3756,14 +3756,16 @@ class SituationMap {
     this.drawTrails(state, center, width, height, worldSize);
     this.drawRadar(state, center, width, height, worldSize);
     this.markerLayer.replaceChildren();
-    mapPoints(state).filter(point => this.layers[point.kind] !== false).forEach(point => {
+    const visibleMarkers = mapPoints(state).filter(point => this.layers[point.kind] !== false).map(point => {
       const pixel = project(point.latitude, point.longitude, this.zoom);
       let deltaX = pixel.x - center.x;
       if (deltaX > worldSize / 2) deltaX -= worldSize;
       if (deltaX < -worldSize / 2) deltaX += worldSize;
       const left = width / 2 + deltaX;
       const top = height / 2 + (pixel.y - center.y);
-      if (left < -30 || left > width + 30 || top < -30 || top > height + 30) return;
+      return { point, left, top };
+    }).filter(marker => marker.left >= -30 && marker.left <= width + 30 && marker.top >= -30 && marker.top <= height + 30);
+    spreadOverlappingMapMarkers(visibleMarkers).forEach(({ point, left, top }) => {
       const marker = document.createElement("button");
       marker.type = "button";
       marker.className = `map-marker ${point.kind}${point.statusClass ? ` ${point.statusClass}` : ""}${point.stale ? " stale" : ""}`;
@@ -4215,6 +4217,26 @@ function mapPoints(state) {
   for(const item of app.integrations?.meshcore_nodes||[])points.push({id:item.id,kind:"meshcore",label:`${item.name||"MeshCore node"}${item.kind?` · ${label(item.kind)}`:""}${item.details?` · ${item.details}`:""}${item.observed_at?` · ${relativeTime(item.observed_at)}`:""}`,latitude:item.latitude,longitude:item.longitude});
   for(const item of app.integrations?.sensors||[])if(item.latitude!=null&&item.longitude!=null)points.push({id:item.id,kind:"sensor",label:`${item.name||item.id}${item.temperature_f==null?"":` · ${Math.round(item.temperature_f)}°F`}${item.status?` · ${item.status}`:""} · ${relativeTime(item.observed_at)}`,latitude:item.latitude,longitude:item.longitude});
   return points;
+}
+
+function spreadOverlappingMapMarkers(markers) {
+  const groups = new Map();
+  markers.forEach(marker => {
+    const key = `${Math.round(marker.left / 10)}:${Math.round(marker.top / 10)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(marker);
+  });
+  groups.forEach(group => {
+    if (group.length < 2) return;
+    const radius = Math.min(24, 9 + group.length * 2);
+    group.sort((left, right) => `${left.point.kind}:${left.point.id}`.localeCompare(`${right.point.kind}:${right.point.id}`));
+    group.forEach((marker, index) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI * index) / group.length;
+      marker.left += Math.cos(angle) * radius;
+      marker.top += Math.sin(angle) * radius;
+    });
+  });
+  return markers;
 }
 
 function mapMarkerLabel(item, fallback) {

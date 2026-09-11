@@ -1064,8 +1064,11 @@ func direWolfQuoted(value string) string {
 func (manager *APRSManager) recordActivity(position APRSPosition, source string) {
 	manager.activityMu.Lock()
 	defer manager.activityMu.Unlock()
-	station := manager.activity[position.Callsign]
-	station.Callsign = position.Callsign
+	// The SSID is part of the APRS station identity. Never collapse CALL-8,
+	// CALL-9, or other suffix-bearing stations into their base callsign.
+	stationCallsign := strings.ToUpper(strings.TrimSpace(position.Callsign))
+	station := manager.activity[stationCallsign]
+	station.Callsign = stationCallsign
 	station.Latitude = position.Latitude
 	station.Longitude = position.Longitude
 	station.SpeedKnots = position.SpeedKnots
@@ -1080,7 +1083,7 @@ func (manager *APRSManager) recordActivity(position APRSPosition, source string)
 		weather := *position.Weather
 		station.Weather = &weather
 	}
-	manager.activity[position.Callsign] = station
+	manager.activity[stationCallsign] = station
 	manager.pruneActivityLocked(position.ReceivedAt.UTC())
 	if len(manager.activity) <= 500 {
 		return

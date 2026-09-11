@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -170,6 +171,37 @@ func TestAPRSDuplicateKeyIgnoresNetworkPathChanges(t *testing.T) {
 	internet := "N0CALL-7>APRS,WIDE1-1,qAR,N0IGATE:!3503.50N/08640.25W>Tracker"
 	if aprsDuplicateKey(rf) != aprsDuplicateKey(internet) {
 		t.Fatalf("RF and APRS-IS copies did not receive the same duplicate key")
+	}
+}
+
+func TestAPRSSSIDRemainsPartOfStationIdentity(t *testing.T) {
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.APRS.Enabled = true
+	settings.APRS.LoginCallsign = "N0CALL"
+	settings.APRS.AreaEnabled = true
+	if _, err = store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewAPRSManager(store, log.New(io.Discard, "", 0))
+	now := time.Now().UTC()
+	manager.recordActivity(APRSPosition{Callsign: "n0call-8", Latitude: 35.1, Longitude: -86.7, ReceivedAt: now}, "aprs_is")
+	manager.recordActivity(APRSPosition{Callsign: "N0CALL-9", Latitude: 35.1, Longitude: -86.7, ReceivedAt: now}, "aprs_is")
+
+	stations := manager.Activity()
+	if len(stations) != 2 {
+		t.Fatalf("same-base stations collapsed: %+v", stations)
+	}
+	callsigns := []string{stations[0].Callsign, stations[1].Callsign}
+	slices.Sort(callsigns)
+	if !slices.Equal(callsigns, []string{"N0CALL-8", "N0CALL-9"}) {
+		t.Fatalf("station SSIDs were not preserved: %v", callsigns)
+	}
+	if aprsDuplicateKey("N0CALL-8>APRS:!3503.50N/08640.25W>Tracker") == aprsDuplicateKey("N0CALL-9>APRS:!3503.50N/08640.25W>Tracker") {
+		t.Fatal("different SSIDs received the same duplicate key")
 	}
 }
 
