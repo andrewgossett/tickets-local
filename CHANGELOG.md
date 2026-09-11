@@ -6,6 +6,8 @@
   the nearby APRS map layer without being assigned to responder records. The
   watch subscribes to the callsign family while preserving each full SSID as a
   distinct station.
+  Watched stations are rendered even when the nearby-radius layer and Local RF
+  show-all option are off.
 - Added responder placement by clicking the map or dragging an existing
   responder marker, plus guarded responder deletion that prevents orphaning
   incident, schedule, command-role, or qualification references.

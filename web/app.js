@@ -4322,6 +4322,7 @@ function mapPoints(state) {
   (state.locations || []).filter(item => item.latitude != null && item.longitude != null)
     .forEach(item => points.push({ id: item.id, kind: "location", label: item.name, latitude: item.latitude, longitude: item.longitude }));
   if (state.settings.aprs?.area_enabled ||
+      (state.settings.aprs?.watch_callsigns || []).length > 0 ||
       ((state.settings.aprs?.mode === "local" || state.settings.aprs?.mode === "hybrid") && state.settings.aprs?.local?.show_all)) {
     const trackedCallsigns = new Set(state.responders.filter(item => item.aprs_enabled).map(item => String(item.callsign || "").toUpperCase()));
     (state.aprs_stations || [])

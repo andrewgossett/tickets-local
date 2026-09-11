@@ -100,4 +100,7 @@ func TestResponderDeleteAPIAndUIControls(t *testing.T) {
 			t.Fatalf("script is missing %q", required)
 		}
 	}
+	if !strings.Contains(string(script), `(state.settings.aprs?.watch_callsigns || []).length > 0`) {
+		t.Fatal("map does not render independently watched APRS callsigns")
+	}
 }

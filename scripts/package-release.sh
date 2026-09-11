@@ -3,7 +3,7 @@ set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dist_dir="$project_dir/dist"
-version="0.5.14"
+version="0.5.15"
 checksum_file="Tickets-Local-${version}-SHA256SUMS.txt"
 
 mkdir -p "$dist_dir"
