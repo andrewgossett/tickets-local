@@ -49,6 +49,7 @@ type aprsRuntimeConfig struct {
 	passcode       string
 	filter         string
 	callsign       map[string]struct{}
+	family         map[string]struct{}
 	areaEnabled    bool
 	areaLatitude   float64
 	areaLongitude  float64
@@ -71,6 +72,7 @@ type localAPRSRuntimeConfig struct {
 	login             string
 	passcode          string
 	callsign          map[string]struct{}
+	family            map[string]struct{}
 	areaEnabled       bool
 	areaLatitude      float64
 	areaLongitude     float64
@@ -131,11 +133,12 @@ func (manager *APRSManager) Status() APRSStatus {
 	status.Local = manager.localStatus
 	status.Local.RecentMessages = slices.Clone(manager.localStatus.RecentMessages)
 	manager.localStatusMu.RUnlock()
-	settings := manager.store.Snapshot().Settings.APRS
+	snapshot := manager.store.Snapshot()
+	settings := snapshot.Settings.APRS
 	manager.activityMu.Lock()
 	status.Mode = settings.Mode
 	status.Local.IGateVerified = settings.Local.IGateEnabled && status.LoginVerified
-	if !settings.Enabled || (!settings.AreaEnabled && !localActivityEnabled(settings)) {
+	if !aprsActivityEnabled(settings, snapshot.Responders) {
 		clear(manager.activity)
 	} else {
 		manager.pruneActivityLocked(time.Now().UTC())
@@ -146,10 +149,11 @@ func (manager *APRSManager) Status() APRSStatus {
 }
 
 func (manager *APRSManager) Activity() []APRSStation {
-	settings := manager.store.Snapshot().Settings.APRS
+	snapshot := manager.store.Snapshot()
+	settings := snapshot.Settings.APRS
 	manager.activityMu.Lock()
 	defer manager.activityMu.Unlock()
-	if !settings.Enabled || (!settings.AreaEnabled && !localActivityEnabled(settings)) {
+	if !aprsActivityEnabled(settings, snapshot.Responders) {
 		clear(manager.activity)
 		return []APRSStation{}
 	}
@@ -226,12 +230,17 @@ func (manager *APRSManager) config() aprsRuntimeConfig {
 	passcode := manager.store.APRSPasscode()
 	callsigns := make([]string, 0)
 	callset := make(map[string]struct{})
+	familyset := make(map[string]struct{})
 	for _, responder := range snapshot.Responders {
 		if responder.APRSEnabled && validTrackedCallsign(responder.Callsign) {
 			call := strings.ToUpper(responder.Callsign)
 			if _, exists := callset[call]; !exists {
 				callset[call] = struct{}{}
-				callsigns = append(callsigns, call)
+				family := aprsCallsignFamily(call)
+				if _, familyExists := familyset[family]; !familyExists {
+					familyset[family] = struct{}{}
+					callsigns = append(callsigns, family+"*")
+				}
 			}
 		}
 	}
@@ -241,6 +250,7 @@ func (manager *APRSManager) config() aprsRuntimeConfig {
 	if validationOnly && validAPRSISLogin(settings.LoginCallsign) {
 		filterParts = append(filterParts, "b/"+settings.LoginCallsign)
 		callset = make(map[string]struct{})
+		familyset = make(map[string]struct{})
 	} else if len(callsigns) > 0 {
 		filterParts = append(filterParts, "b/"+strings.Join(callsigns, "/"))
 	}
@@ -268,6 +278,7 @@ func (manager *APRSManager) config() aprsRuntimeConfig {
 		passcode:       passcode,
 		filter:         filter,
 		callsign:       callset,
+		family:         familyset,
 		areaEnabled:    settings.AreaEnabled && !validationOnly,
 		areaLatitude:   snapshot.Settings.CenterLat,
 		areaLongitude:  snapshot.Settings.CenterLon,
@@ -429,12 +440,15 @@ func (manager *APRSManager) connectAndRead(ctx context.Context, config aprsRunti
 				})
 			}
 		}
-		if config.areaEnabled && distanceKilometers(
+		_, exactTracked := config.callsign[position.Callsign]
+		_, trackedFamily := config.family[aprsCallsignFamily(position.Callsign)]
+		siblingSSID := trackedFamily && !exactTracked
+		if siblingSSID || (config.areaEnabled && distanceKilometers(
 			config.areaLatitude,
 			config.areaLongitude,
 			position.Latitude,
 			position.Longitude,
-		) <= config.areaRadiusKM {
+		) <= config.areaRadiusKM) {
 			manager.recordActivity(position, "aprs_is")
 			manager.updateStatus(func(status *APRSStatus) {
 				status.LastAreaPositionAt = &packetAt
@@ -499,9 +513,12 @@ func (manager *APRSManager) localConfig() localAPRSRuntimeConfig {
 	settings := snapshot.Settings.APRS
 	passcode := manager.store.APRSPasscode()
 	callset := make(map[string]struct{})
+	familyset := make(map[string]struct{})
 	for _, responder := range snapshot.Responders {
 		if responder.APRSEnabled && validTrackedCallsign(responder.Callsign) {
-			callset[strings.ToUpper(responder.Callsign)] = struct{}{}
+			call := strings.ToUpper(responder.Callsign)
+			callset[call] = struct{}{}
+			familyset[aprsCallsignFamily(call)] = struct{}{}
 		}
 	}
 	localMode := settings.Mode == "local" || settings.Mode == "hybrid"
@@ -543,6 +560,7 @@ func (manager *APRSManager) localConfig() localAPRSRuntimeConfig {
 		login:             settings.LoginCallsign,
 		passcode:          passcode,
 		callsign:          callset,
+		family:            familyset,
 		areaEnabled:       settings.AreaEnabled,
 		areaLatitude:      snapshot.Settings.CenterLat,
 		areaLongitude:     snapshot.Settings.CenterLon,
@@ -709,7 +727,9 @@ func (manager *APRSManager) processLocalPosition(config localAPRSRuntimeConfig, 
 		position.Latitude,
 		position.Longitude,
 	) <= config.areaRadiusKM
-	if config.showAll || inConfiguredArea {
+	_, exactTracked := config.callsign[position.Callsign]
+	_, trackedFamily := config.family[aprsCallsignFamily(position.Callsign)]
+	if config.showAll || inConfiguredArea || (trackedFamily && !exactTracked) {
 		// A packet heard directly over RF must remain visible even when Hybrid mode
 		// already received the same packet from APRS-IS. Cross-source deduplication
 		// prevents duplicate responder tracks, not local station awareness.
@@ -1176,6 +1196,14 @@ func aprsDuplicateKey(raw string) string {
 	return raw
 }
 
+func aprsCallsignFamily(callsign string) string {
+	callsign = strings.ToUpper(strings.TrimSpace(callsign))
+	if hyphen := strings.IndexByte(callsign, '-'); hyphen >= 0 {
+		return callsign[:hyphen]
+	}
+	return callsign
+}
+
 func (manager *APRSManager) updateStatus(update func(*APRSStatus)) {
 	manager.statusMu.Lock()
 	defer manager.statusMu.Unlock()
@@ -1190,6 +1218,15 @@ func (manager *APRSManager) updateLocalStatus(update func(*APRSLocalStatus)) {
 
 func localActivityEnabled(settings APRSSettings) bool {
 	return (settings.Mode == "local" || settings.Mode == "hybrid") && settings.Local.ShowAll
+}
+
+func aprsActivityEnabled(settings APRSSettings, responders []Responder) bool {
+	if !settings.Enabled {
+		return false
+	}
+	return settings.AreaEnabled || localActivityEnabled(settings) || slices.ContainsFunc(responders, func(responder Responder) bool {
+		return responder.APRSEnabled && validTrackedCallsign(responder.Callsign)
+	})
 }
 
 func waitForContext(ctx context.Context, duration time.Duration) bool {

@@ -84,7 +84,7 @@ func TestAPRSManagerVerifiedLoginFilterAndPosition(t *testing.T) {
 		if !strings.Contains(login, "user N0CALL pass 12345 vers TicketsLocal "+version) {
 			t.Fatalf("unexpected APRS-IS login: %q", login)
 		}
-		if !strings.Contains(login, "filter b/N0CALL-7") {
+		if !strings.Contains(login, "filter b/N0CALL*") {
 			t.Fatalf("login did not contain tracked responder filter: %q", login)
 		}
 		if !strings.Contains(login, "r/35.058300/-86.670800/40.2") {
@@ -202,6 +202,41 @@ func TestAPRSSSIDRemainsPartOfStationIdentity(t *testing.T) {
 	}
 	if aprsDuplicateKey("N0CALL-8>APRS:!3503.50N/08640.25W>Tracker") == aprsDuplicateKey("N0CALL-9>APRS:!3503.50N/08640.25W>Tracker") {
 		t.Fatal("different SSIDs received the same duplicate key")
+	}
+}
+
+func TestTrackedAPRSSSIDSubscribesAndDisplaysSiblingSSIDs(t *testing.T) {
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = store.SaveAPRSPasscode("12345"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.CreateResponder(ResponderInput{Name: "Tracker 9", Callsign: "KI4HDU-9", Status: "available", APRSEnabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.APRS.Enabled = true
+	settings.APRS.LoginCallsign = "N0CALL"
+	if _, err = store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	manager := NewAPRSManager(store, log.New(io.Discard, "", 0))
+	config := manager.config()
+	if config.filter != "b/KI4HDU*" {
+		t.Fatalf("APRS filter = %q, want sibling-SSID wildcard", config.filter)
+	}
+	position := APRSPosition{Callsign: "KI4HDU-8", Latitude: 35.9, Longitude: -86.7, ReceivedAt: time.Now().UTC(), Raw: "KI4HDU-8>APRS:!3554.00N/08642.00W>Tracker 8"}
+	_, exactTracked := config.callsign[position.Callsign]
+	_, trackedFamily := config.family[aprsCallsignFamily(position.Callsign)]
+	if exactTracked || !trackedFamily {
+		t.Fatalf("sibling identity classification exact=%t family=%t", exactTracked, trackedFamily)
+	}
+	manager.recordActivity(position, "aprs_is")
+	stations := manager.Activity()
+	if len(stations) != 1 || stations[0].Callsign != "KI4HDU-8" {
+		t.Fatalf("sibling SSID was not independently displayed: %+v", stations)
 	}
 }
 
