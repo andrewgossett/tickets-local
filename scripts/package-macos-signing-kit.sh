@@ -3,7 +3,7 @@ set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dist_dir="$project_dir/dist"
-version="0.5.15"
+version="0.5.16"
 direwolf_version="1.8.1"
 direwolf_source_sha256="89d5f7992ae1e74d8cf26ec6479dde74d1f480bde950043756e875a689d065d7"
 kit_name="Tickets-Local-${version}-macOS-Signing-Kit"

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -92,7 +93,7 @@ func ax25UIToTNC2(frame []byte) (string, error) {
 	if frame[offset] != 0x03 || frame[offset+1] != 0xf0 {
 		return "", errors.New("AX.25 frame is not an APRS UI frame")
 	}
-	information := frame[offset+2:]
+	information := bytes.TrimRight(frame[offset+2:], "\r\n")
 	if len(information) == 0 || len(information) > 2048 {
 		return "", errors.New("AX.25 information field is invalid")
 	}

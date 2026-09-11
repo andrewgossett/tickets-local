@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"os"
 	"strings"
@@ -50,6 +51,30 @@ func TestKISSFrameAndAX25Decode(t *testing.T) {
 	want := "N0CALL-7>APRS,WIDE1-1*:!3503.50N/08640.25W>Local receiver"
 	if line != want {
 		t.Fatalf("TNC2 packet = %q, want %q", line, want)
+	}
+}
+
+func TestKISSTrailingLineTerminatorIsAccepted(t *testing.T) {
+	frame := testAX25UIFrame(
+		"KN4EIG-9",
+		"S5TY6X",
+		[]testAX25Path{{callsign: "W4ETR-10", repeated: true}, {callsign: "WIDE2-1"}},
+		"`o>Pl ->/`\"7(}146.850MHz 146.520_2\r",
+	)
+	line, err := ax25UIToTNC2(frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasSuffix(line, "\r") {
+		t.Fatalf("TNC2 packet retained trailing carriage return: %q", line)
+	}
+	position, err := parseAPRSPacket(line, time.Date(2026, 9, 11, 18, 16, 3, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if position.Callsign != "KN4EIG-9" || math.Abs(position.Latitude-35.828) > 0.00002 ||
+		math.Abs(position.Longitude-(-83.575333)) > 0.00002 {
+		t.Fatalf("unexpected decoded position: %+v", position)
 	}
 }
 

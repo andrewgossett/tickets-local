@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Accepted trailing carriage-return and line-feed terminators on KISS AX.25
+  information fields. Dire Wolf packets such as the reported `KN4EIG-9`
+  Mic-E position now reach the Local RF station map instead of being rejected.
 - Added an independent APRS callsign watchlist so stations remain visible on
   the nearby APRS map layer without being assigned to responder records. The
   watch subscribes to the callsign family while preserving each full SSID as a
