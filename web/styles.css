@@ -373,6 +373,9 @@ html[data-theme="light"] .map-tile { filter: saturate(.8) brightness(.98); }
 .map-marker.incident { --marker: var(--critical); }
 .map-marker.incident.stale > span { border-color: #fde68a; animation: stale-map-marker 1.8s infinite; }
 .map-marker.responder { --marker: var(--primary); }
+.map-marker.responder { cursor: grab; touch-action: none; }
+.map-marker.responder.dragging { cursor: grabbing; z-index: 8; }
+.map.is-positioning-responder { cursor: crosshair; }
 .map-marker.responder.stale { opacity: .5; filter: grayscale(.45); }
 .map-marker.facility { --marker: var(--green); }
 .map-marker.location { --marker: var(--purple); }

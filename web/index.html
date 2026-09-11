@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/png" href="/icon-64.png">
   <title>Tickets Local</title>
-  <link rel="stylesheet" href="/styles.css?v=0.5.13">
+  <link rel="stylesheet" href="/styles.css?v=0.5.14">
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -399,7 +399,7 @@
 
         <section class="page" data-page-view="settings">
           <div class="section-heading">
-            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.13</span>
+            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.14</span>
           </div>
           <div class="settings-grid">
             <form class="panel network-settings" id="network-settings-form">
@@ -568,6 +568,7 @@
                     <label>Server<input name="server" maxlength="160" placeholder="rotate.aprs2.net:14580"></label>
                   </div>
                   <label>Additional server filter<input name="extra_filter" maxlength="300" placeholder="Optional, for example r/35/-86/50"><small class="field-help">Tracked responder callsigns are added automatically as a buddy-list filter.</small></label>
+                  <label>Additional callsigns to watch<input name="watch_callsigns" maxlength="600" placeholder="KI4HDU-8, N0CALL-9"><small class="field-help">Comma-separated APRS callsigns shown as yellow map stations even when they are not assigned to a responder. Each SSID remains a separate station.</small></label>
                   <label class="toggle-row">
                     <input name="area_enabled" type="checkbox">
                     <span><strong>Show nearby APRS-IS activity on the map</strong><small>Adds a server range filter centered on the Situation map home. It does not reduce delivery of tracked responders outside that area.</small></span>
@@ -666,7 +667,7 @@
         <section class="page" data-page-view="about">
           <div class="section-heading"><div><p class="eyebrow">PROJECT INFORMATION</p><h2>About &amp; Licenses</h2><p>Licensing, attribution, and operational limitations.</p></div></div>
           <article class="panel about-panel"><div class="settings-body">
-            <h3>Tickets Local <span class="version-badge">Version 0.5.13</span></h3>
+            <h3>Tickets Local <span class="version-badge">Version 0.5.14</span></h3>
             <p><strong>Copyright © 2026 Andrew Mark Gossett and Tickets Local contributors.</strong></p>
             <p>Tickets Local is an AI-assisted hobby project. It is not an official OpenISES release, certified dispatch system, emergency service, or substitute for validated public-safety systems and procedures.</p>
             <p><strong>No warranty:</strong> this software is provided without warranty of any kind under GNU GPL v2. Operators are responsible for evaluating its suitability, data sources, connectivity, and outputs.</p>
@@ -837,14 +838,14 @@
           <input name="aprs_enabled" type="checkbox">
           <span><strong>Track this callsign with APRS</strong><small>Uses the responder callsign with whichever Internet, local RF, or Hybrid source is selected.</small></span>
         </label>
-        <div class="form-section-heading"><span>Position</span><button type="button" class="text-button" id="use-device-location"><svg><use href="#i-map-pin"/></svg>Use this device’s location</button></div>
+        <div class="form-section-heading"><span>Position</span><div><button type="button" class="text-button existing-only" id="position-responder-on-map"><svg><use href="#i-map-pin"/></svg>Choose on map</button><button type="button" class="text-button" id="use-device-location"><svg><use href="#i-map-pin"/></svg>Use this device’s location</button></div></div>
         <div class="form-row two"><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any"></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any"></label></div>
         <small class="field-help" id="device-location-status">One-time capture only. Tickets Local does not track this browser in the background.</small>
         <div class="owntracks-box existing-only" id="owntracks-box"><div><strong>OwnTracks HTTP endpoint</strong><code id="owntracks-endpoint"></code><small id="owntracks-help">Host mode is required for a phone on the LAN.</small></div><button class="secondary-button" id="copy-owntracks-endpoint" type="button">Copy URL</button></div>
         <div class="owntracks-box existing-only" id="opengts-box"><div><strong>OpenGTS-compatible HTTP endpoint</strong><code id="opengts-endpoint"></code><small id="opengts-help">Host mode is required for a GPS tracker on the LAN.</small></div><button class="secondary-button" id="copy-opengts-endpoint" type="button">Copy URL</button></div>
         <label>Notes<textarea name="notes" rows="3" maxlength="4000"></textarea></label>
       </div>
-      <footer class="dialog-footer"><span></span><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save responder</button></div></footer>
+      <footer class="dialog-footer"><button class="danger-button existing-only" id="delete-responder" type="button">Delete responder</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="primary-button" type="submit">Save responder</button></div></footer>
     </form>
   </dialog>
 
@@ -955,6 +956,6 @@
   </div>
 
   <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
-  <script src="/app.js?v=0.5.13" defer></script>
+  <script src="/app.js?v=0.5.14" defer></script>
 </body>
 </html>

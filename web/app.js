@@ -15,6 +15,7 @@ const app = {
         server: "rotate.aprs2.net:14580",
         login_callsign: "",
         extra_filter: "",
+        watch_callsigns: [],
         stale_minutes: 15,
         trail_hours: 12,
         area_enabled: false,
@@ -376,6 +377,8 @@ function bindActions() {
   $("#location-geocode-button").addEventListener("click", geocodeLocation);
   $("#center-geocode-button").addEventListener("click", geocodeMapCenter);
   $("#delete-location").addEventListener("click", deleteLocation);
+  $("#delete-responder").addEventListener("click", deleteResponder);
+  $("#position-responder-on-map").addEventListener("click", chooseResponderPositionOnMap);
   $("#incident-saved-location").addEventListener("change", event => applySavedLocation(event.target.value, $("#incident-form"), true));
   $("#facility-saved-location").addEventListener("change", event => applySavedLocation(event.target.value, $("#facility-form"), false));
   $("#add-demo-data").addEventListener("click", addDemoData);
@@ -999,6 +1002,7 @@ function renderSettings() {
     aprsForm.elements.login_callsign.value = settings.login_callsign;
     aprsForm.elements.server.value = settings.server;
     aprsForm.elements.extra_filter.value = settings.extra_filter;
+    aprsForm.elements.watch_callsigns.value = (settings.watch_callsigns || []).join(", ");
     aprsForm.elements.stale_minutes.value = settings.stale_minutes;
     aprsForm.elements.trail_hours.value = settings.trail_hours;
     aprsForm.elements.area_enabled.checked = settings.area_enabled;
@@ -2119,6 +2123,34 @@ async function saveResponder(event) {
   }
 }
 
+async function deleteResponder() {
+  const form = $("#responder-form");
+  const id = form.dataset.editingId || "";
+  if (!id) return;
+  const responder = app.state.responders.find(item => item.id === id);
+  if (!confirm(`Delete ${responder ? displayResponder(responder) : "this responder"}? Its saved APRS trail will also be removed.`)) return;
+  setFormBusy(form, true);
+  try {
+    await api(`/api/responders/${encodeURIComponent(id)}`, { method: "DELETE" });
+    $("#responder-dialog").close();
+    toast("Responder deleted", responder ? displayResponder(responder) : "");
+    await loadState();
+  } catch (error) {
+    toast("Responder was not deleted", error.message, "error");
+  } finally {
+    setFormBusy(form, false);
+  }
+}
+
+function chooseResponderPositionOnMap() {
+  const form = $("#responder-form");
+  const id = form.dataset.editingId || "";
+  if (!id) return;
+  $("#responder-dialog").close();
+  switchPage("dashboard");
+  requestAnimationFrame(() => app.map.startResponderPosition(id));
+}
+
 function openFacility(facility = null) {
   const dialog = $("#facility-dialog");
   const form = $("#facility-form");
@@ -2595,6 +2627,7 @@ async function saveAPRSSettings(event) {
       login_callsign: form.elements.login_callsign.value,
       server: form.elements.server.value,
       extra_filter: form.elements.extra_filter.value,
+      watch_callsigns: form.elements.watch_callsigns.value.split(",").map(item => item.trim()).filter(Boolean),
       stale_minutes: Number(form.elements.stale_minutes.value),
       trail_hours: Number(form.elements.trail_hours.value),
       area_enabled: form.elements.area_enabled.checked,
@@ -3267,6 +3300,7 @@ class SituationMap {
     this.mapHint = $("[data-map-hint]", element);
     this.pendingState = null;
     this.suppressClick = false;
+    this.positioningResponderID = "";
     this.panel = element.closest(".map-panel");
     this.expandButtons = $$("[data-map-expand]", this.panel);
     $("[data-map-zoom='in']", element).addEventListener("click", () => {
@@ -3330,6 +3364,7 @@ class SituationMap {
       event.preventDefault();
       event.stopImmediatePropagation();
     }, true);
+    element.addEventListener("click", event => this.positionResponderFromClick(event));
     element.addEventListener("click", event => this.addDrawingPoint(event));
     element.addEventListener("dblclick", event => {
       if (event.target.closest(".map-controls, .map-layer-control, .map-marker")) return;
@@ -3354,9 +3389,11 @@ class SituationMap {
     }
     const drawingCount = (state.overlays || []).filter(overlay => overlay.file_name === "Map drawing").length;
     $("[data-map-manage-overlays]", this.element).hidden = drawingCount === 0;
-    this.mapHint.textContent = drawingCount
-      ? `${drawingCount} saved drawing${drawingCount === 1 ? "" : "s"} · Click a shape to delete · Manage drawings for a list`
-      : "Drag to move · Scroll to zoom · Double-click to zoom";
+    this.mapHint.textContent = this.positioningResponderID
+      ? "Click the map to place the responder · Press Escape to cancel"
+      : drawingCount
+        ? `${drawingCount} saved drawing${drawingCount === 1 ? "" : "s"} · Click a shape to delete · Manage drawings for a list`
+        : "Drag responder markers to reposition · Scroll to zoom · Double-click to zoom";
     this.scheduleDraw(state);
   }
 
@@ -3489,6 +3526,85 @@ class SituationMap {
     this.center = [Number(latitude), Number(longitude)];
     this.zoom = Math.max(this.zoom, Math.min(18, zoom));
     this.scheduleDraw(app.state);
+  }
+
+  startResponderPosition(id) {
+    const responder = app.state.responders.find(item => item.id === id);
+    if (!responder) return;
+    this.cancelDrawing();
+    this.clearRoute();
+    this.positioningResponderID = id;
+    this.element.classList.add("is-positioning-responder");
+    if (responder.latitude != null && responder.longitude != null) this.focusPoint(responder.latitude, responder.longitude, 14);
+    this.render(app.state);
+    this.element.focus({ preventScroll: true });
+  }
+
+  coordinateAt(clientX, clientY) {
+    const rect = this.element.getBoundingClientRect();
+    const center = project(this.center[0], this.center[1], this.zoom);
+    return unproject(center.x + clientX - rect.left - rect.width / 2, center.y + clientY - rect.top - rect.height / 2, this.zoom);
+  }
+
+  async saveResponderPosition(id, coordinate) {
+    const responder = app.state.responders.find(item => item.id === id);
+    if (!responder) return;
+    try {
+      await api(`/api/responders/${encodeURIComponent(id)}/position`, { method: "POST", body: {
+        latitude: coordinate[0], longitude: coordinate[1], source: "map", expected_updated_at: responder.updated_at
+      }});
+      toast("Responder position saved", `${coordinate[0].toFixed(5)}, ${coordinate[1].toFixed(5)}`);
+      await loadState();
+    } catch (error) {
+      toast("Responder position was not saved", error.message, "error");
+      this.scheduleDraw(app.state);
+    }
+  }
+
+  positionResponderFromClick(event) {
+    if (!this.positioningResponderID || event.target.closest(".map-controls, .map-layer-control, .map-drawing-control, .map-marker")) return;
+    const id = this.positioningResponderID;
+    this.positioningResponderID = "";
+    this.element.classList.remove("is-positioning-responder");
+    this.saveResponderPosition(id, this.coordinateAt(event.clientX, event.clientY));
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
+  makeResponderDraggable(marker, point) {
+    marker.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || !event.isPrimary || this.positioningResponderID || this.drawing || this.route?.selecting) return;
+      event.stopPropagation();
+      const origin = { x: event.clientX, y: event.clientY };
+      let moved = false;
+      marker.setPointerCapture(event.pointerId);
+      const move = moveEvent => {
+        if (moveEvent.pointerId !== event.pointerId) return;
+        if (!moved && Math.hypot(moveEvent.clientX - origin.x, moveEvent.clientY - origin.y) < 4) return;
+        moved = true;
+        const rect = this.element.getBoundingClientRect();
+        marker.classList.add("dragging");
+        marker.style.left = `${moveEvent.clientX - rect.left}px`;
+        marker.style.top = `${moveEvent.clientY - rect.top}px`;
+        moveEvent.preventDefault();
+      };
+      const finish = upEvent => {
+        if (upEvent.pointerId !== event.pointerId) return;
+        marker.removeEventListener("pointermove", move);
+        marker.removeEventListener("pointerup", finish);
+        marker.removeEventListener("pointercancel", finish);
+        marker.classList.remove("dragging");
+        if (moved) {
+          marker.dataset.dragged = "true";
+          this.saveResponderPosition(point.id, this.coordinateAt(upEvent.clientX, upEvent.clientY));
+          upEvent.preventDefault();
+          upEvent.stopPropagation();
+        }
+      };
+      marker.addEventListener("pointermove", move);
+      marker.addEventListener("pointerup", finish);
+      marker.addEventListener("pointercancel", finish);
+    });
   }
 
   startDrawing() {
@@ -3652,7 +3768,11 @@ class SituationMap {
       "-": () => this.zoomBy(-1),
       Home: () => this.resetView(app.state),
       Escape: () => {
-        if (this.panel.classList.contains("is-expanded")) this.toggleExpanded();
+        if (this.positioningResponderID) {
+          this.positioningResponderID = "";
+          this.element.classList.remove("is-positioning-responder");
+          this.render(app.state);
+        } else if (this.panel.classList.contains("is-expanded")) this.toggleExpanded();
       }
     };
     const action = actions[event.key];
@@ -3776,12 +3896,17 @@ class SituationMap {
       if (point.markerColor) marker.style.setProperty("--marker", point.markerColor);
       marker.innerHTML = `<span>${point.mapLabel ? `<b>${html(point.mapLabel)}</b>` : ""}</span><small class="marker-label">${html(point.label)}</small>`;
       marker.addEventListener("click", () => {
+        if (marker.dataset.dragged === "true") {
+          delete marker.dataset.dragged;
+          return;
+        }
         if (point.kind === "incident") openIncident(app.state.incidents.find(item => item.id === point.id));
         else if (point.kind === "responder") openResponder(app.state.responders.find(item => item.id === point.id));
         else if (point.kind === "facility") openFacility(app.state.facilities.find(item => item.id === point.id));
         else if (point.kind === "location") openLocation((app.state.locations || []).find(item => item.id === point.id));
         else toast(mapPointKindLabel(point.kind), point.label);
       });
+      if (point.kind === "responder") this.makeResponderDraggable(marker, point);
       this.markerLayer.append(marker);
     });
     this.drawUnmappedIncidents(state);

@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.13"
+	version     = "0.5.14"
 )
 
 type State struct {
@@ -214,6 +214,7 @@ type APRSSettings struct {
 	Server             string            `json:"server"`
 	LoginCallsign      string            `json:"login_callsign"`
 	ExtraFilter        string            `json:"extra_filter"`
+	WatchCallsigns     []string          `json:"watch_callsigns"`
 	StaleMinutes       int               `json:"stale_minutes"`
 	TrailHours         int               `json:"trail_hours"`
 	AreaEnabled        bool              `json:"area_enabled"`
@@ -620,6 +621,7 @@ type ResponderPositionInput struct {
 	Latitude          float64    `json:"latitude"`
 	Longitude         float64    `json:"longitude"`
 	AccuracyMeters    *float64   `json:"accuracy_meters,omitempty"`
+	Source            string     `json:"source,omitempty"`
 	ExpectedUpdatedAt *time.Time `json:"expected_updated_at,omitempty"`
 }
 

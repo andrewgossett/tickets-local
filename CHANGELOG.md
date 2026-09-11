@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added an independent APRS callsign watchlist so stations remain visible on
+  the nearby APRS map layer without being assigned to responder records. The
+  watch subscribes to the callsign family while preserving each full SSID as a
+  distinct station.
+- Added responder placement by clicking the map or dragging an existing
+  responder marker, plus guarded responder deletion that prevents orphaning
+  incident, schedule, command-role, or qualification references.
+
 - Preserved the complete APRS `CALL-SSID` as the nearby-station identity and
   fanned coincident map markers apart, so stations such as `CALL-8` and
   `CALL-9` remain simultaneously visible even when they report the same point.

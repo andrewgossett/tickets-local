@@ -21,7 +21,7 @@ Tickets Local clients on a trusted private LAN.
 
 No GitHub account is required. Choose the download for your computer:
 
-- **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-macOS-universal-notarized.dmg)
+- **macOS:** [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.14/Tickets-Local-0.5.14-macOS-universal-notarized.dmg)
 - **Windows:** [Download the Windows x64 application](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64.exe)
 - **Windows ZIP:** [Download the portable Windows x64 ZIP](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-Windows-x64-unsigned.zip)
 
@@ -40,10 +40,12 @@ for checksums, release notes, and every available package.
 - Selectable amateur-repeater, GMRS-repeater, and read-only MeshCore-node map layers
 - Concurrent-edit conflict protection for core operational records
 - One-click incident stage progression and configurable no-update alerts
-- Responder records, capabilities, status, and incident assignment
+- Responder records, capabilities, status, incident assignment, guarded deletion,
+  and click-or-drag map positioning
 - Optional resource-board tabs grouped by responder type
 - Internet-only, Local RF, and Hybrid APRS source modes
 - Verified APRS-IS tracking for selected responder callsigns
+- Independent APRS callsign watchlist for map visibility without assigning a callsign to a responder
 - Local KISS TCP input for an existing Dire Wolf or compatible TNC
 - Optional bundled Dire Wolf sound-card decoding and receive-only RF-to-IS iGate
 - In-app Dire Wolf detection, Mac audio input/output selection, decoder health,
@@ -109,14 +111,14 @@ Choose **More info** only after verifying the checksum and source.
 
 ### macOS
 
-1. [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.13/Tickets-Local-0.5.13-macOS-universal-notarized.dmg).
+1. [Download the signed and Apple-notarized universal DMG](https://github.com/andrewgossett/tickets-local/releases/download/v0.5.14/Tickets-Local-0.5.14-macOS-universal-notarized.dmg).
 2. Open the downloaded DMG.
 3. Drag **Tickets Local.app** into **Applications**.
 4. Open **Tickets Local** from Applications.
 
 The universal package supports both Apple silicon and Intel Macs. Its Developer
 ID signature and Apple notarization can be verified against the checksum shown
-on the [release page](https://github.com/andrewgossett/tickets-local/releases/tag/v0.5.13).
+on the [release page](https://github.com/andrewgossett/tickets-local/releases/tag/v0.5.14).
 
 For a Developer ID owner, the project includes a universal Mac signing kit.
 Build the kit with:
@@ -161,7 +163,7 @@ On Windows, build and test the x64 GUI package with PowerShell:
 ```
 
 The Windows script runs the complete Go suite and `go vet`, then produces
-`dist/Tickets-Local-0.5.13-Windows-x64-unsigned.zip` and its `.sha256` file.
+`dist/Tickets-Local-0.5.14-Windows-x64-unsigned.zip` and its `.sha256` file.
 It stages only the executable, README, license, and notice files in a fresh directory.
 Use `-GoExecutable 'C:\path\to\go.exe'` when Go is not on PATH.
 Run `./scripts/test-windows-package.ps1` in PowerShell 7 to also verify the PE

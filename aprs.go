@@ -244,6 +244,13 @@ func (manager *APRSManager) config() aprsRuntimeConfig {
 			}
 		}
 	}
+	for _, call := range settings.WatchCallsigns {
+		family := aprsCallsignFamily(call)
+		if _, exists := familyset[family]; !exists {
+			familyset[family] = struct{}{}
+			callsigns = append(callsigns, family+"*")
+		}
+	}
 	slices.Sort(callsigns)
 	filterParts := make([]string, 0, 2)
 	validationOnly := settings.Mode == "local" && settings.Local.IGateEnabled
@@ -521,6 +528,9 @@ func (manager *APRSManager) localConfig() localAPRSRuntimeConfig {
 			familyset[aprsCallsignFamily(call)] = struct{}{}
 		}
 	}
+	for _, call := range settings.WatchCallsigns {
+		familyset[aprsCallsignFamily(call)] = struct{}{}
+	}
 	localMode := settings.Mode == "local" || settings.Mode == "hybrid"
 	kissAddress := settings.Local.KISSAddress
 	if settings.Local.Decoder == "bundled" {
@@ -547,7 +557,7 @@ func (manager *APRSManager) localConfig() localAPRSRuntimeConfig {
 		passcodeHash,
 	)
 	return localAPRSRuntimeConfig{
-		enabled:           settings.Enabled && localMode && (len(callset) > 0 || settings.Local.ShowAll) && (!settings.Local.IGateEnabled || loginVerified),
+		enabled:           settings.Enabled && localMode && (len(familyset) > 0 || settings.Local.ShowAll) && (!settings.Local.IGateEnabled || loginVerified),
 		mode:              settings.Mode,
 		decoder:           settings.Local.Decoder,
 		kissAddress:       kissAddress,
@@ -1224,7 +1234,7 @@ func aprsActivityEnabled(settings APRSSettings, responders []Responder) bool {
 	if !settings.Enabled {
 		return false
 	}
-	return settings.AreaEnabled || localActivityEnabled(settings) || slices.ContainsFunc(responders, func(responder Responder) bool {
+	return settings.AreaEnabled || len(settings.WatchCallsigns) > 0 || localActivityEnabled(settings) || slices.ContainsFunc(responders, func(responder Responder) bool {
 		return responder.APRSEnabled && validTrackedCallsign(responder.Callsign)
 	})
 }

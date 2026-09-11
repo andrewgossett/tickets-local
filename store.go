@@ -39,6 +39,7 @@ type changeSet struct {
 	Incident               *Incident           `json:"incident,omitempty"`
 	Responder              *Responder          `json:"responder,omitempty"`
 	Responders             []Responder         `json:"responders,omitempty"`
+	ResponderDeleteID      string              `json:"responder_delete_id,omitempty"`
 	Facility               *Facility           `json:"facility,omitempty"`
 	Location               *Location           `json:"location,omitempty"`
 	LocationDeleteID       string              `json:"location_delete_id,omitempty"`
@@ -580,6 +581,13 @@ func (s *Store) UpdateResponderDevicePosition(id string, input ResponderPosition
 	if input.AccuracyMeters != nil && (*input.AccuracyMeters < 0 || *input.AccuracyMeters > 100000) {
 		return Responder{}, validationError{"device location accuracy is invalid"}
 	}
+	input.Source = strings.ToLower(clean(input.Source))
+	if input.Source == "" {
+		input.Source = "device"
+	}
+	if !oneOf(input.Source, "device", "map") {
+		return Responder{}, validationError{"responder position source is invalid"}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	index := findResponder(s.state.Responders, id)
@@ -592,13 +600,42 @@ func (s *Store) UpdateResponderDevicePosition(id string, input ResponderPosition
 	}
 	now := time.Now().UTC()
 	responder.Latitude, responder.Longitude = &input.Latitude, &input.Longitude
-	responder.PositionSource, responder.PositionUpdatedAt, responder.UpdatedAt = "device", &now, now
+	responder.PositionSource, responder.PositionUpdatedAt, responder.UpdatedAt = input.Source, &now, now
 	responder.SpeedKnots, responder.CourseDegrees, responder.AltitudeFeet = nil, nil, nil
-	activity := newActivity("responder.device_position", fmt.Sprintf("Device position updated: %s", responderDisplayName(responder)), "responder", responder.ID)
-	if _, err := s.commitLocked("responder.device_position", changeSet{Responder: &responder, Activity: &activity}); err != nil {
+	eventKind, description := "responder.device_position", "Device position updated"
+	if input.Source == "map" {
+		eventKind, description = "responder.map_position", "Map position updated"
+	}
+	activity := newActivity(eventKind, fmt.Sprintf("%s: %s", description, responderDisplayName(responder)), "responder", responder.ID)
+	if _, err := s.commitLocked(eventKind, changeSet{Responder: &responder, Activity: &activity}); err != nil {
 		return Responder{}, err
 	}
 	return responder, nil
+}
+
+func (s *Store) DeleteResponder(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	index := findResponder(s.state.Responders, id)
+	if index < 0 {
+		return ErrNotFound
+	}
+	for _, incident := range s.state.Incidents {
+		if slices.ContainsFunc(incident.Assignments, func(item Assignment) bool { return item.ResponderID == id }) ||
+			slices.ContainsFunc(incident.Command, func(item CommandRole) bool { return item.ResponderID == id }) {
+			return validationError{"remove this responder from incident assignments and command roles before deleting it"}
+		}
+	}
+	if slices.ContainsFunc(s.state.Schedule, func(item ScheduleItem) bool { return slices.Contains(item.AssignedResponderIDs, id) }) {
+		return validationError{"remove this responder from scheduled items before deleting it"}
+	}
+	if slices.ContainsFunc(s.state.Qualifications, func(item Qualification) bool { return item.ResponderID == id }) {
+		return validationError{"remove this responder's qualification records before deleting it"}
+	}
+	responder := s.state.Responders[index]
+	activity := newActivity("responder.deleted", fmt.Sprintf("Responder removed: %s", responderDisplayName(responder)), "responder", responder.ID)
+	_, err := s.commitLocked("responder.deleted", changeSet{ResponderDeleteID: id, TrackDeleteResponderID: id, Activity: &activity})
+	return err
 }
 
 func (s *Store) RecordExternalPosition(id, source string, latitude, longitude float64, speedKnots, courseDegrees, altitudeFeet *float64, receivedAt time.Time) (Responder, bool, error) {
@@ -1030,6 +1067,26 @@ func (s *Store) UpdateSettings(settings Settings) (Settings, error) {
 	settings.APRS.Server = clean(settings.APRS.Server)
 	settings.APRS.LoginCallsign = strings.ToUpper(clean(settings.APRS.LoginCallsign))
 	settings.APRS.ExtraFilter = clean(settings.APRS.ExtraFilter)
+	watchCallsigns := make([]string, 0, len(settings.APRS.WatchCallsigns))
+	seenWatchCallsigns := make(map[string]struct{})
+	for _, value := range settings.APRS.WatchCallsigns {
+		call := strings.ToUpper(clean(value))
+		if call == "" {
+			continue
+		}
+		if !validTrackedCallsign(call) {
+			return Settings{}, validationError{"APRS watch callsigns must be valid callsigns, such as KI4HDU-8"}
+		}
+		if _, exists := seenWatchCallsigns[call]; !exists {
+			seenWatchCallsigns[call] = struct{}{}
+			watchCallsigns = append(watchCallsigns, call)
+		}
+	}
+	if len(watchCallsigns) > 50 {
+		return Settings{}, validationError{"no more than 50 APRS watch callsigns may be configured"}
+	}
+	slices.Sort(watchCallsigns)
+	settings.APRS.WatchCallsigns = watchCallsigns
 	settings.APRS.Mode = strings.ToLower(clean(settings.APRS.Mode))
 	settings.APRS.Local.Decoder = strings.ToLower(clean(settings.APRS.Local.Decoder))
 	settings.APRS.Local.KISSAddress = clean(settings.APRS.Local.KISSAddress)
@@ -1338,6 +1395,9 @@ func (s *Store) applyEvent(event Event) error {
 	}
 	if change.Responder != nil {
 		upsertResponder(&s.state.Responders, *change.Responder)
+	}
+	if change.ResponderDeleteID != "" {
+		s.state.Responders = slices.DeleteFunc(s.state.Responders, func(item Responder) bool { return item.ID == change.ResponderDeleteID })
 	}
 	for _, responder := range change.Responders {
 		upsertResponder(&s.state.Responders, responder)

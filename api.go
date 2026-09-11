@@ -951,13 +951,24 @@ func (s *apiServer) responder(w http.ResponseWriter, r *http.Request) {
 		s.responderPosition(w, r, strings.TrimSuffix(pathValue, "/position"))
 		return
 	}
-	if r.Method != http.MethodPut {
-		methodNotAllowed(w, http.MethodPut)
-		return
-	}
 	id := pathValue
 	if id == "" || strings.Contains(id, "/") {
 		http.NotFound(w, r)
+		return
+	}
+	if r.Method == http.MethodDelete {
+		if err := s.store.DeleteResponder(id); err != nil {
+			writeStoreError(w, err)
+			return
+		}
+		if s.aprs != nil {
+			s.aprs.Notify()
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodPut {
+		methodNotAllowed(w, http.MethodPut, http.MethodDelete)
 		return
 	}
 	var input ResponderInput
