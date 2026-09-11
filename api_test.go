@@ -92,7 +92,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.16`,
+		`Version 0.5.17`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -111,6 +111,9 @@ func TestAPILifecycle(t *testing.T) {
 		`id="mobile-access-key"`,
 		`id="mobile-responder-select"`,
 		`data-mobile-status="enroute"`,
+		`id="mobile-use-location"`,
+		`id="mobile-location-query"`,
+		`id="mobile-find-location"`,
 		`id="mobile-incident-list"`,
 	} {
 		if !strings.Contains(indexHTML, mobileElement) {
@@ -152,7 +155,11 @@ func TestAPILifecycle(t *testing.T) {
 		`request.headers["X-Tickets-Local-Device-Key"]`,
 		`/api/mobile/admin/enrollment`,
 		`/api/mobile/status`,
+		`/api/mobile/location`,
+		`/api/mobile/geocode`,
 		`async function updateMobileResponderStatus`,
+		`function updateMobileLocationFromGPS`,
+		`async function findMobileLocation`,
 		`expected_updated_at: responder.updated_at`,
 	} {
 		if !strings.Contains(scriptText, mobileBehavior) {
@@ -170,7 +177,8 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	stylesText := string(stylesBody)
 	if !strings.Contains(stylesText, "body.mobile-companion-mode .mobile-companion") ||
-		!strings.Contains(stylesText, ".mobile-status-grid") {
+		!strings.Contains(stylesText, ".mobile-status-grid") ||
+		!strings.Contains(stylesText, ".mobile-location-panel") {
 		t.Fatal("mobile companion layout is missing")
 	}
 	if !strings.Contains(stylesText, ".map-drawing-control { position: absolute; z-index: 9; left: 12px; bottom: 82px;") ||

@@ -111,6 +111,8 @@ func (s *apiServer) Handler() http.Handler {
 	mux.HandleFunc("/api/mobile/enroll", s.mobileEnroll)
 	mux.HandleFunc("/api/mobile/state", s.mobileState)
 	mux.HandleFunc("/api/mobile/status", s.mobileStatus)
+	mux.HandleFunc("/api/mobile/location", s.mobileLocation)
+	mux.HandleFunc("/api/mobile/geocode", s.mobileGeocode)
 	mux.HandleFunc("/api/mobile/admin/enrollment", s.mobileAdminEnrollment)
 	mux.HandleFunc("/api/mobile/admin/devices", s.mobileAdminDevices)
 	mux.HandleFunc("/api/mobile/admin/devices/", s.mobileAdminDevice)
@@ -1552,7 +1554,7 @@ func (s *apiServer) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)")
 		// Radar responses are converted to object URLs in the browser. Allow the
 		// resulting blob: image while keeping every other resource local or on the
 		// explicitly approved OpenStreetMap tile host.

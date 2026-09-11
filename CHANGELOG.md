@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added explicit responder-position updates to the mobile companion. Enrolled
+  phones can use a one-time browser GPS fix or select an address/cross-street
+  search result, while device credentials remain scoped to their bound
+  responder and no background tracking is enabled.
 - Accepted trailing carriage-return and line-feed terminators on KISS AX.25
   information fields. Dire Wolf packets such as the reported `KN4EIG-9`
   Mic-E position now reach the Local RF station map instead of being rejected.

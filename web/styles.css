@@ -880,6 +880,13 @@ body.mobile-companion-mode .mobile-companion { display: grid; gap: 14px; width: 
 .mobile-status-grid button:last-child { grid-column: 1 / -1; }
 .mobile-status-grid button.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
 .mobile-status-grid button:disabled { cursor: not-allowed; opacity: .45; }
+.mobile-location-panel { display: grid; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px; }
+.mobile-location-panel .primary-button,
+.mobile-location-panel .secondary-button { min-height: 48px; justify-content: center; }
+.mobile-location-panel small { color: var(--muted); line-height: 1.45; }
+.mobile-location-divider { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+.mobile-location-divider::before,
+.mobile-location-divider::after { content: ""; height: 1px; background: var(--border); }
 .mobile-current-status { border-radius: 9px; padding: 11px 12px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
 .mobile-current-status.status-available { color: var(--green); }
 .mobile-current-status.status-assigned,

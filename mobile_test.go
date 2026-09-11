@@ -168,4 +168,33 @@ func TestMobileDeviceCanReadScopedStateAndUpdateOnlyItsResponder(t *testing.T) {
 	if updated.MapLabel != "FT" || updated.MarkerColor != "#123abc" {
 		t.Fatalf("mobile status update cleared map appearance: %+v", updated)
 	}
+
+	locationBody := `{"latitude":35.828,"longitude":-83.575333,"accuracy_meters":12,"expected_updated_at":"` + updated.UpdatedAt.Format(time.RFC3339Nano) + `"}`
+	request, _ = http.NewRequest(http.MethodPut, server.URL+"/api/mobile/location", strings.NewReader(locationBody))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set(mobileDeviceHeader, enrolled.DeviceKey)
+	locationResponse, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer locationResponse.Body.Close()
+	if locationResponse.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(locationResponse.Body)
+		t.Fatalf("location update = %d, body=%s", locationResponse.StatusCode, body)
+	}
+	updated, _ = responderFromState(operational.Snapshot(), responder.ID)
+	if updated.Latitude == nil || updated.Longitude == nil || *updated.Latitude != 35.828 || *updated.Longitude != -83.575333 || updated.PositionSource != "device" {
+		t.Fatalf("mobile location was not applied to the bound responder: %+v", updated)
+	}
+
+	request, _ = http.NewRequest(http.MethodPut, server.URL+"/api/mobile/location", strings.NewReader(`{"latitude":36,"longitude":-84}`))
+	request.Header.Set("Content-Type", "application/json")
+	unauthorizedResponse, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer unauthorizedResponse.Body.Close()
+	if unauthorizedResponse.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unauthorized location update = %d, want %d", unauthorizedResponse.StatusCode, http.StatusUnauthorized)
+	}
 }

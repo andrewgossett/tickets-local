@@ -152,6 +152,11 @@ function bindMobileCompanion() {
     const button = event.target.closest("[data-mobile-status]");
     if (button) updateMobileResponderStatus(button.dataset.mobileStatus, button);
   });
+  $("#mobile-use-location").addEventListener("click", updateMobileLocationFromGPS);
+  $("#mobile-find-location").addEventListener("click", findMobileLocation);
+  $("#mobile-location-query").addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); findMobileLocation(); }
+  });
   $("#mobile-forget-key").addEventListener("click", () => {
     localStorage.removeItem("tickets-local-mobile-lan-key");
     localStorage.removeItem("tickets-local-mobile-device-key");
@@ -226,6 +231,8 @@ function renderMobileCompanion() {
     button.disabled = !responder;
     button.classList.toggle("active", responder?.status === button.dataset.mobileStatus);
   });
+  $("#mobile-use-location").disabled = !responder;
+  $("#mobile-find-location").disabled = !responder;
   const assignment = responder ? activeIncidents().find(incident => (incident.assignments || []).some(item => item.responder_id === responder.id)) : null;
   $("#mobile-assignment-title").textContent = assignment ? `Incident #${assignment.number} · ${assignment.title}` : responder ? "No active assignment" : "No responder selected";
   $("#mobile-assignment-detail").innerHTML = assignment
@@ -270,6 +277,77 @@ async function updateMobileResponderStatus(status, button) {
   } finally {
     button.blur();
   }
+}
+
+async function saveMobileLocation(latitude, longitude, accuracyMeters = 0, description = "Selected location") {
+  const responder = (app.state.responders || []).find(item => item.id === $("#mobile-responder-select").value);
+  if (!responder) return;
+  const deviceEnrolled = Boolean(localStorage.getItem("tickets-local-mobile-device-key"));
+  const endpoint = deviceEnrolled ? "/api/mobile/location" : `/api/responders/${encodeURIComponent(responder.id)}/position`;
+  const saved = await api(endpoint, { method: deviceEnrolled ? "PUT" : "POST", body: {
+    latitude,
+    longitude,
+    accuracy_meters: accuracyMeters,
+    expected_updated_at: responder.updated_at
+  }});
+  await loadMobileState(false);
+  $("#mobile-location-status").textContent = `${description} · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+  toast("Location updated", displayResponder(saved));
+}
+
+function updateMobileLocationFromGPS() {
+  const button = $("#mobile-use-location");
+  const status = $("#mobile-location-status");
+  if (!navigator.geolocation) {
+    status.textContent = "This browser does not provide phone location access. Use the address or cross-street search below.";
+    toast("Phone GPS unavailable", status.textContent, "error");
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "Waiting for this phone’s location…";
+  navigator.geolocation.getCurrentPosition(async position => {
+    try {
+      await saveMobileLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy, `Phone GPS · accuracy about ${Math.round(position.coords.accuracy)} m`);
+    } catch (error) {
+      status.textContent = "The phone found its location, but Tickets Local could not save it.";
+      toast("Location was not updated", error.message, "error");
+    } finally { button.disabled = false; }
+  }, error => {
+    status.textContent = error.code === 1 ? "Location permission was not granted. Use the cross-street search if needed." : "This phone could not determine its location. Use the cross-street search if needed.";
+    toast("Phone GPS unavailable", status.textContent, "error");
+    button.disabled = false;
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+}
+
+async function findMobileLocation() {
+  const query = $("#mobile-location-query").value.trim();
+  const button = $("#mobile-find-location");
+  const resultsContainer = $("#mobile-location-results");
+  if (query.length < 3) { toast("Enter a location", "Enter an address or two cross streets and a city.", "error"); return; }
+  button.disabled = true;
+  resultsContainer.classList.remove("visible");
+  resultsContainer.innerHTML = "";
+  try {
+    const deviceEnrolled = Boolean(localStorage.getItem("tickets-local-mobile-device-key"));
+    const results = await api(`${deviceEnrolled ? "/api/mobile/geocode" : "/api/geocode"}?q=${encodeURIComponent(query)}`);
+    resultsContainer.innerHTML = results.length
+      ? `<p class="geocode-guidance">Select the matching location:</p>${results.map((result, index) => `<button type="button" class="geocode-result" data-mobile-location-result="${index}"><strong>Use this location</strong><span>${html(result.display_name)}</span></button>`).join("")}`
+      : `<p class="geocode-guidance">No matching location found. Include both street names, city, and state.</p>`;
+    resultsContainer.classList.add("visible");
+    resultsContainer.querySelectorAll("[data-mobile-location-result]").forEach(resultButton => resultButton.addEventListener("click", async () => {
+      const result = results[Number(resultButton.dataset.mobileLocationResult)];
+      resultButton.disabled = true;
+      try {
+        await saveMobileLocation(result.latitude, result.longitude, 0, result.display_name);
+        resultsContainer.classList.remove("visible");
+      } catch (error) {
+        toast("Location was not updated", error.message, "error");
+        resultButton.disabled = false;
+      }
+    }));
+  } catch (error) {
+    toast("Location search failed", error.message, "error");
+  } finally { button.disabled = false; }
 }
 
 function bindNavigation() {

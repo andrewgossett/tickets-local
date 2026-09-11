@@ -73,9 +73,12 @@ application identification, and information required by the feature:
   forwarded information may become publicly available through the APRS network.
 
 Browser device-location capture is requested through an explicit operator action
-and browser permission. A captured location is stored as operational information
-locally or on the configured Host. Configured tracking integrations can also
-receive location updates from external devices.
+and browser permission, including from an enrolled mobile companion. A captured
+location is stored as operational information locally or on the configured Host.
+Mobile address and cross-street searches send the entered query to the configured
+geocoding provider. Tickets Local does not collect companion location in the
+background. Configured tracking integrations can also receive location updates
+from external devices.
 
 External services operate under their own policies. Using a local provider where
 supported, disabling integrations, or working offline can reduce external

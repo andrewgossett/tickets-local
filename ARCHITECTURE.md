@@ -99,6 +99,8 @@ Important routes:
 | `POST /api/mobile/enroll` | Redeem a short-lived, single-use phone enrollment token |
 | `GET /api/mobile/state` | Device-scoped responder assignment and active incidents |
 | `PUT /api/mobile/status` | Device-scoped status update for its bound responder |
+| `PUT /api/mobile/location` | Device-scoped position update for its bound responder |
+| `GET /api/mobile/geocode` | Device-authenticated address and cross-street lookup |
 | `/api/mobile/admin/...` | Host-local QR enrollment and device revocation |
 | `GET /api/connections` | Bounded live diagnostics for LAN peers and enabled providers |
 | `GET /api/events` | Server-Sent Event notification stream |
@@ -188,7 +190,8 @@ contains the selected LAN URL and that token, never the shared LAN key. On
 redemption the Host issues a separate 256-bit device credential bound to one
 responder. Only its SHA-256 hash is persisted in owner-readable
 `mobile-devices.json`, which remains outside the event log and backups. Device
-credentials authorize only the narrow mobile state and responder-status routes
+credentials authorize only the narrow mobile state, status, location, and
+location-search routes
 and can be revoked independently. This improves credential isolation but does
 not add transport encryption; the trusted-private-LAN restriction still
 applies.

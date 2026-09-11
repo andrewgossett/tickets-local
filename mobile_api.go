@@ -179,6 +179,41 @@ func (s *apiServer) mobileStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
+func (s *apiServer) mobileLocation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		methodNotAllowed(w, http.MethodPut)
+		return
+	}
+	device, ok := s.authorizeMobileDevice(w, r)
+	if !ok {
+		return
+	}
+	var input ResponderPositionInput
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	updated, err := s.store.UpdateResponderDevicePosition(device.ResponderID, input)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	if s.aprs != nil {
+		s.aprs.Notify()
+	}
+	writeJSON(w, http.StatusOK, updated)
+}
+
+func (s *apiServer) mobileGeocode(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w, http.MethodGet)
+		return
+	}
+	if _, ok := s.authorizeMobileDevice(w, r); !ok {
+		return
+	}
+	s.geocode(w, r)
+}
+
 func (s *apiServer) authorizeMobileDevice(w http.ResponseWriter, r *http.Request) (MobileDevice, bool) {
 	if !s.mobileHostAvailable(w) {
 		return MobileDevice{}, false
