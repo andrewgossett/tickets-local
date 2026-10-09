@@ -3823,7 +3823,15 @@ class SituationMap {
     if (!shape || this.drawing || this.route?.selecting) return;
     event.preventDefault();
     event.stopPropagation();
-    toast("Weather warning", shape.dataset.weatherAlertLabel);
+    const shapes = [shape];
+    if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+      document.elementsFromPoint(event.clientX, event.clientY).forEach(element => {
+        const alertShape = element.closest?.("[data-weather-alert-label]");
+        if (alertShape) shapes.push(alertShape);
+      });
+    }
+    const labels = [...new Set(shapes.map(item => item.dataset.weatherAlertLabel).filter(Boolean))];
+    toast(labels.length > 1 ? `${labels.length} weather alerts here` : "Weather warning", labels.join("\n"), labels.length > 1 ? "warning" : "success");
   }
 
   toggleExpanded() {

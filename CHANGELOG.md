@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Made clicks on overlapping weather alert polygons report every alert at that
+  map point, so one advisory no longer hides a coincident watch or warning.
 - Weather warning polygons now follow the visible map instead of remaining
   limited to the configured home point. Panning or zooming triggers a debounced,
   Host-cached, nine-point NWS sample plus the map-center state's complete alert

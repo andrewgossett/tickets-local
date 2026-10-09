@@ -846,7 +846,7 @@ dialog::backdrop { background: rgba(3, 8, 20, .7); backdrop-filter: blur(4px); }
 .toast.error::before { background: var(--critical); }
 .toast.warning::before { background: var(--medium); }
 .toast strong { display: block; font-size: 11px; }
-.toast p { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
+.toast p { margin: 2px 0 0; color: var(--muted); font-size: 10px; white-space: pre-line; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 .shutdown-screen { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; background: var(--bg); }
 .shutdown-screen[hidden] { display: none; }
