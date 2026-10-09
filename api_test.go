@@ -72,6 +72,9 @@ func TestAPILifecycle(t *testing.T) {
 	if !strings.Contains(indexHTML, `data-map-position aria-label="Map position on Situation page"`) {
 		t.Fatal("Situation map position selector is missing")
 	}
+	if !strings.Contains(indexHTML, `data-map-layer="alerts" checked> Weather alert areas`) {
+		t.Fatal("map layers are missing the weather alert area toggle")
+	}
 	if !strings.Contains(indexHTML, `id="network-refresh-addresses"`) ||
 		!strings.Contains(indexHTML, `Test &amp; save connection`) {
 		t.Fatal("index is missing the refreshable, save-on-test LAN controls")
@@ -92,7 +95,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.19`,
+		`Version 0.5.20`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -219,7 +222,7 @@ func TestAPILifecycle(t *testing.T) {
 		".map-tiles { z-index: 1; }",
 		".map-radar { z-index: 6; display: block;",
 		".map-trails { z-index: 7;",
-		".map-markers { z-index: 7; pointer-events: none; }",
+		".map-markers { z-index: 8; pointer-events: none; }",
 	} {
 		if !strings.Contains(stylesText, layer) {
 			t.Fatalf("map stylesheet is missing explicit layer ordering: %s", layer)

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Renamed the map's warning control to **Weather alert areas** and placed all
+  point markers above weather and imported-area polygons. Operators can toggle
+  warning areas independently without hiding or blocking APRS, responder,
+  facility, incident, or other map icons.
 - Added a bounded NWS affected-zone fallback for alerts without native
   geometry. Flood Watches and similar county/forecast-zone products now render
   selectable map polygons while precise warning polygons remain unchanged.

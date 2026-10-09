@@ -343,7 +343,7 @@ tbody tr.incident-needs-update:hover { background: rgba(251, 191, 36, .11); }
 .map-radar { z-index: 6; display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
 .map-radar.is-stale { filter: grayscale(.18); }
 .map-trails { z-index: 7; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.map-markers { z-index: 7; pointer-events: none; }
+.map-markers { z-index: 8; pointer-events: none; }
 .aprs-trail { fill: none; stroke: #38bdf8; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: .72; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .65)); }
 .overlay-line, .overlay-polygon, .overlay-point { vector-effect: non-scaling-stroke; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45)); }
 .weather-alert-polygon { vector-effect: non-scaling-stroke; fill: rgba(251, 191, 36, .24); stroke: #fbbf24; stroke-width: 4; stroke-dasharray: 8 4; fill-rule: evenodd; paint-order: stroke fill; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .75)); }
