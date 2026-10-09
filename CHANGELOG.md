@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Weather warning polygons now follow the visible map instead of remaining
+  limited to the configured home point. Panning or zooming triggers a debounced,
+  Host-cached, nine-point NWS sample plus the map-center state's complete alert
+  set, with alert deduplication, bounded zone geometry, invalid-bounds rejection,
+  and stale-browser-response protection.
 - Renamed the map's warning control to **Weather alert areas** and placed all
   point markers above weather and imported-area polygons. Operators can toggle
   warning areas independently without hiding or blocking APRS, responder,

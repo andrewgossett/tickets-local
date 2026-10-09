@@ -3368,6 +3368,13 @@ class SituationMap {
     this.radarPaused = false;
     this.radarPlayButton = $("[data-radar-play]", element);
     this.radarStatus = $("[data-map-radar-status]", element);
+    this.alertTimer = null;
+    this.alertRequest = 0;
+    this.alertViewportDesiredKey = "";
+    this.alertViewportKey = "";
+    this.alertViewportPendingKey = "";
+    this.alertViewportLoadedAt = 0;
+    this.viewportAlerts = null;
     this.layers = loadMapLayers();
     this.hasFitInitialObjects = false;
     this.drawing = null;
@@ -3920,6 +3927,14 @@ class SituationMap {
     const endTileY = Math.floor((minY + height) / 256);
     const tileCount = 2 ** this.zoom;
 
+    const northWest = unproject(minX, minY, this.zoom);
+    const southEast = unproject(minX + width, minY + height, this.zoom);
+    if (northWest[1] < southEast[1]) {
+      this.loadViewportAlerts(state, {
+        south: southEast[0], west: northWest[1], north: northWest[0], east: southEast[1]
+      });
+    }
+
     const visibleTiles = new Set();
     for (let y = startTileY; y <= endTileY; y++) {
       if (y < 0 || y >= tileCount) continue;
@@ -3988,6 +4003,36 @@ class SituationMap {
     });
     this.drawUnmappedIncidents(state);
     const current=app.weather?.current;this.weatherBadge.hidden=!current;if(current){this.weatherBadge.innerHTML=`<strong>${current.temperature_f==null?"—":`${Math.round(current.temperature_f)}°F`}</strong>${html(current.description||"Current conditions")}`;}
+  }
+
+  loadViewportAlerts(state, bounds) {
+    if (this.layers.alerts === false || !state.settings.weather?.enabled) return;
+    const normalized = Object.fromEntries(Object.entries(bounds).map(([key, value]) => [key, Number(value).toFixed(2)]));
+    const key = `${normalized.south},${normalized.west},${normalized.north},${normalized.east}`;
+    if (key !== this.alertViewportDesiredKey) {
+      this.alertViewportDesiredKey = key;
+      this.alertRequest++;
+      this.alertViewportPendingKey = "";
+    }
+    if (key === this.alertViewportKey && Date.now() - this.alertViewportLoadedAt < 4 * 60 * 1000) return;
+    if (key === this.alertViewportPendingKey) return;
+    clearTimeout(this.alertTimer);
+    this.alertTimer = setTimeout(async () => {
+      const requestID = this.alertRequest;
+      this.alertViewportPendingKey = key;
+      try {
+        const status = await api(`/api/weather/alerts?${new URLSearchParams(normalized)}`);
+        if (requestID !== this.alertRequest) return;
+        this.viewportAlerts = status.alerts || [];
+        this.alertViewportKey = key;
+        this.alertViewportLoadedAt = Date.now();
+        this.scheduleDraw(app.state);
+      } catch (error) {
+        if (requestID === this.alertRequest) console.warn("Visible-map weather alerts failed", error);
+      } finally {
+        if (requestID === this.alertRequest) this.alertViewportPendingKey = "";
+      }
+    }, 450);
   }
 
   drawRadar(state, center, width, height, worldSize) {
@@ -4206,7 +4251,8 @@ class SituationMap {
       if (deltaX < -worldSize / 2) deltaX += worldSize;
       return { x: width / 2 + deltaX, y: height / 2 + pixel.y - center.y };
     };
-    (this.layers.alerts === false ? [] : (state.weather_alerts || [])).forEach(alert => {
+    const weatherAlerts = this.viewportAlerts === null ? (state.weather_alerts || []) : this.viewportAlerts;
+    (this.layers.alerts === false ? [] : weatherAlerts).forEach(alert => {
       const pathData = (alert.paths || []).map(path => path.map((coordinate, index) => {
         const point = toScreen(coordinate);
         return `${index ? "L" : "M"} ${point.x} ${point.y}`;

@@ -124,6 +124,108 @@ func TestWeatherServiceUsesAffectedZoneGeometryWhenAlertHasNoPolygon(t *testing.
 	}
 }
 
+func TestWeatherServiceFetchesAndCachesVisibleMapAlerts(t *testing.T) {
+	var requests atomic.Int32
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		if r.URL.Query().Get("point") == "" || r.URL.Query().Get("status") != "actual" {
+			t.Errorf("visible-map request query = %q", r.URL.RawQuery)
+		}
+		_, _ = io.WriteString(w, `{"features":[{
+			"id":"urn:oid:hurricane-warning",
+			"geometry":{"type":"Polygon","coordinates":[[[-82.8,26.0],[-80.0,26.0],[-80.0,29.0],[-82.8,26.0]]]},
+			"properties":{"event":"Hurricane Warning","severity":"Extreme","areaDesc":"Florida coast"}
+		}]}`)
+	}))
+	defer provider.Close()
+	t.Setenv("TICKETS_LOCAL_NWS_ALERTS_URL", provider.URL)
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.Weather.Enabled = true
+	settings.Weather.RefreshMinutes = 5
+	if _, err := store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	service := NewWeatherService(store, provider.Client(), log.New(io.Discard, "", 0))
+	status, err := service.AlertsForBounds(context.Background(), 24, -87, 31, -79)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.State != "current" || len(status.Alerts) != 1 || status.Alerts[0].Event != "Hurricane Warning" {
+		t.Fatalf("unexpected visible-map alerts: %+v", status)
+	}
+	if requests.Load() != maxViewportSamples {
+		t.Fatalf("visible map made %d requests; want %d bounded samples", requests.Load(), maxViewportSamples)
+	}
+	if _, err := service.AlertsForBounds(context.Background(), 24, -87, 31, -79); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != maxViewportSamples {
+		t.Fatalf("visible-map alert cache was not reused: %d requests", requests.Load())
+	}
+	if _, err := service.AlertsForBounds(context.Background(), 31, -87, 24, -79); err == nil {
+		t.Fatal("inverted visible-map bounds were accepted")
+	}
+}
+
+func TestWeatherServiceAddsCenterStateAlertsToVisibleMap(t *testing.T) {
+	var areaRequests atomic.Int32
+	var provider *httptest.Server
+	provider = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/points/"):
+			_, _ = io.WriteString(w, `{"properties":{"relativeLocation":{"properties":{"state":"FL"}}}}`)
+		case r.URL.Path == "/alerts" && r.URL.Query().Get("area") == "FL":
+			areaRequests.Add(1)
+			_, _ = io.WriteString(w, `{"features":[{"id":"state-hurricane","geometry":{"type":"Polygon","coordinates":[[[-87.0,29.0],[-85.0,29.0],[-85.0,30.5],[-87.0,29.0]]]},"properties":{"event":"Hurricane Warning","severity":"Extreme","areaDesc":"Florida Gulf Coast"}}]}`)
+		case r.URL.Path == "/alerts" && r.URL.Query().Get("point") != "":
+			_, _ = io.WriteString(w, `{"features":[]}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer provider.Close()
+	t.Setenv("TICKETS_LOCAL_NWS_ALERTS_URL", provider.URL+"/alerts")
+	t.Setenv("TICKETS_LOCAL_NWS_API_URL", provider.URL)
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.Weather.Enabled = true
+	if _, err := store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	status, err := NewWeatherService(store, provider.Client(), log.New(io.Discard, "", 0)).AlertsForBounds(context.Background(), 24, -87, 31, -79)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(status.Alerts) != 1 || status.Alerts[0].Event != "Hurricane Warning" || areaRequests.Load() != 1 {
+		t.Fatalf("center-state hurricane alert was not included once: status=%+v area requests=%d", status, areaRequests.Load())
+	}
+}
+
+func TestLimitWeatherAlertCoordinatesPreservesSeverityOrder(t *testing.T) {
+	path := func(count int) []MapCoordinate {
+		result := make([]MapCoordinate, count)
+		for index := range result {
+			result[index] = MapCoordinate{Latitude: float64(index), Longitude: float64(index)}
+		}
+		return result
+	}
+	alerts := []WeatherAlert{
+		{ID: "extreme", Severity: "extreme", Paths: [][]MapCoordinate{path(6)}},
+		{ID: "minor", Severity: "minor", Paths: [][]MapCoordinate{path(6)}},
+	}
+	limited := limitWeatherAlertCoordinates(alerts, 9)
+	if len(limited[0].Paths) != 1 || len(limited[0].Paths[0]) != 6 || len(limited[1].Paths) != 1 || len(limited[1].Paths[0]) != 3 {
+		t.Fatalf("coordinate cap did not preserve higher-severity geometry first: %+v", limited)
+	}
+}
+
 func TestWeatherServiceUsesPersistedCacheWhenProviderFails(t *testing.T) {
 	dataDir := t.TempDir()
 	now := time.Now().UTC().Add(-time.Hour)
@@ -200,6 +302,11 @@ func TestWeatherAPIReportsHostOwnedAlerts(t *testing.T) {
 	if status.State != "current" || len(status.Alerts) != 1 || status.Alerts[0].ID != "api-alert" {
 		t.Fatalf("unexpected weather API response: %+v", status)
 	}
+	viewport := requestJSON[WeatherAlertViewport](t, server.URL+"/api/weather/alerts?south=24&west=-87&north=31&east=-79", http.MethodGet, nil, http.StatusOK)
+	if viewport.State != "current" || len(viewport.Alerts) != 1 || viewport.Alerts[0].ID != "api-alert" {
+		t.Fatalf("unexpected visible-map weather API response: %+v", viewport)
+	}
+	requestJSON[map[string]string](t, server.URL+"/api/weather/alerts?south=31&west=-87&north=24&east=-79", http.MethodGet, nil, http.StatusBadRequest)
 }
 
 func TestWeatherSettingsValidateAndUseConfiguredLocalSource(t *testing.T) {

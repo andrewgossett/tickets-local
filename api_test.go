@@ -95,7 +95,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.20`,
+		`Version 0.5.21`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -230,6 +230,11 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	if !strings.Contains(scriptText, `this.layers.aprs === false ? [] : (state.tracks || [])`) {
 		t.Fatal("APRS trail rendering does not follow the APRS layer toggle")
+	}
+	if !strings.Contains(scriptText, `loadViewportAlerts(state, bounds)`) ||
+		!strings.Contains(scriptText, `/api/weather/alerts?${new URLSearchParams(normalized)}`) ||
+		!strings.Contains(scriptText, `this.viewportAlerts === null ? (state.weather_alerts || []) : this.viewportAlerts`) {
+		t.Fatal("map warning polygons do not refresh from bounded visible-map alerts")
 	}
 	if !strings.Contains(scriptText, `state.weather_alerts = app.weather?.alerts || app.state.weather_alerts || [];`) {
 		t.Fatal("state refreshes do not preserve weather warning polygons")

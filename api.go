@@ -124,6 +124,7 @@ func (s *apiServer) Handler() http.Handler {
 	mux.HandleFunc("/api/restore/apply", s.restoreApply)
 	mux.HandleFunc("/api/geocode", s.geocode)
 	mux.HandleFunc("/api/weather", s.weatherStatus)
+	mux.HandleFunc("/api/weather/alerts", s.weatherAlerts)
 	mux.HandleFunc("/api/weather/radar", s.weatherRadar)
 	mux.HandleFunc("/api/water", s.waterStatus)
 	mux.HandleFunc("/api/water/sites", s.waterSites)
@@ -414,6 +415,37 @@ func (s *apiServer) weatherStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.weather.Status(r.Context()))
+}
+
+func (s *apiServer) weatherAlerts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w, http.MethodGet)
+		return
+	}
+	if s.weather == nil {
+		writeJSON(w, http.StatusOK, WeatherAlertViewport{State: "disabled", Message: "Weather service is unavailable", Alerts: []WeatherAlert{}})
+		return
+	}
+	query := r.URL.Query()
+	south, southErr := strconv.ParseFloat(query.Get("south"), 64)
+	west, westErr := strconv.ParseFloat(query.Get("west"), 64)
+	north, northErr := strconv.ParseFloat(query.Get("north"), 64)
+	east, eastErr := strconv.ParseFloat(query.Get("east"), 64)
+	if southErr != nil || westErr != nil || northErr != nil || eastErr != nil {
+		writeError(w, http.StatusBadRequest, "visible-map weather alerts require south, west, north, and east bounds")
+		return
+	}
+	status, err := s.weather.AlertsForBounds(r.Context(), south, west, north, east)
+	if err != nil {
+		var validation validationError
+		if errors.As(err, &validation) {
+			writeError(w, http.StatusBadRequest, err.Error())
+		} else {
+			writeError(w, http.StatusBadGateway, err.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, status)
 }
 
 func (s *apiServer) waterStatus(w http.ResponseWriter, r *http.Request) {

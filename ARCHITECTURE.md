@@ -106,6 +106,7 @@ Important routes:
 | `GET /api/events` | Server-Sent Event notification stream |
 | `GET /api/backup` | Replayable event-log download |
 | `GET /api/geocode` | Rate-limited, operator-requested Nominatim query |
+| `GET /api/weather/alerts` | Cached, bounded NWS alerts sampled across visible map bounds |
 | `GET /api/integrations` | Cached storm, infrastructure, repeater, MeshCore, AREDN, and sensor awareness |
 | `POST/GET /api/incidents/{id}/attachments...` | Bounded Host-owned incident files |
 | `GET /api/incidents/{id}/export?format=...` | Preview-only Winlink and ICS output |
@@ -120,6 +121,16 @@ official NWS alert has no geometry, the Host resolves its bounded
 and combines those shapes for the map. Zone requests are deduplicated,
 concurrency-limited, time-bounded, coordinate-bounded, cached with the weather
 status, and never followed to an arbitrary alert-supplied host.
+
+The map also requests alerts for its current visible bounds after a debounced
+pan or zoom. The Host samples a fixed 3-by-3 grid and, for the official NWS
+service, adds the complete active-alert set for the state at the map center so
+narrow coastal warnings are not missed between samples. Requests are concurrent-
+bounded; alerts are deduplicated before missing zone geometry is resolved; the
+normalized result is limited to 100 alerts; and at most 24 short-lived viewport
+cache entries are kept. Visible geometry is capped at 100,000 coordinates after
+severity sorting so extreme alerts retain priority. Invalid or inverted bounds
+are rejected, and late browser responses cannot replace alerts for a newer view.
 
 ### Persistence
 

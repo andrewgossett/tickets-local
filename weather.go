@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +26,15 @@ const (
 	maxAlertCoordinates = 10000
 	maxAlertZones       = 50
 	maxZoneFetchWorkers = 6
+	maxViewportSamples  = 9
+	maxViewportCache    = 24
+	maxViewportCoords   = 100000
 )
+
+type weatherViewportCacheEntry struct {
+	status WeatherAlertViewport
+	at     time.Time
+}
 
 type WeatherService struct {
 	mu         sync.Mutex
@@ -37,6 +46,7 @@ type WeatherService struct {
 	cachePath  string
 	cached     WeatherStatus
 	radarCache map[string]radarCacheEntry
+	viewCache  map[string]weatherViewportCacheEntry
 }
 
 func NewWeatherService(store *Store, client *http.Client, logger *log.Logger) *WeatherService {
@@ -57,6 +67,7 @@ func NewWeatherService(store *Store, client *http.Client, logger *log.Logger) *W
 		cachePath:  filepath.Join(store.dataDir, "weather-cache.json"),
 		cached:     WeatherStatus{State: "waiting", Message: "Weather has not updated yet", Source: "National Weather Service", Alerts: []WeatherAlert{}},
 		radarCache: make(map[string]radarCacheEntry),
+		viewCache:  make(map[string]weatherViewportCacheEntry),
 	}
 	service.loadCache()
 	return service
@@ -147,6 +158,7 @@ func (service *WeatherService) fetch(ctx context.Context, settings Settings) (We
 	sort.SliceStable(alerts, func(i, j int) bool {
 		return weatherSeverityRank(alerts[i].Severity) < weatherSeverityRank(alerts[j].Severity)
 	})
+	alerts = limitWeatherAlertCoordinates(alerts, maxViewportCoords)
 	now := time.Now().UTC()
 	message := "No active NWS alerts at the configured map home"
 	if len(alerts) > 0 {
@@ -165,6 +177,265 @@ func (service *WeatherService) fetch(ctx context.Context, settings Settings) (We
 		}
 	}
 	return WeatherStatus{State: "current", Message: message, UpdatedAt: &now, Source: source, CenterLat: settings.CenterLat, CenterLon: settings.CenterLon, Alerts: alerts, Current: current}, nil
+}
+
+func (service *WeatherService) AlertsForBounds(ctx context.Context, south, west, north, east float64) (WeatherAlertViewport, error) {
+	settings := service.store.Snapshot().Settings
+	if !settings.Weather.Enabled {
+		return WeatherAlertViewport{State: "disabled", Message: "Weather awareness is off", Source: "National Weather Service", Alerts: []WeatherAlert{}}, nil
+	}
+	if !validWeatherBounds(south, west, north, east) {
+		return WeatherAlertViewport{}, validationError{"weather alert bounds are invalid"}
+	}
+	key := fmt.Sprintf("%.2f,%.2f,%.2f,%.2f", south, west, north, east)
+	refresh := time.Duration(max(1, settings.Weather.RefreshMinutes)) * time.Minute
+	service.mu.Lock()
+	if cached, ok := service.viewCache[key]; ok && time.Since(cached.at) < refresh {
+		service.mu.Unlock()
+		return cached.status, nil
+	}
+	service.mu.Unlock()
+
+	endpointText := strings.TrimSpace(settings.Weather.AlertsURL)
+	if endpointText == "" {
+		endpointText = service.endpoint
+	}
+	endpoint, err := url.Parse(endpointText)
+	if err != nil || !oneOf(endpoint.Scheme, "http", "https") || endpoint.Host == "" {
+		return WeatherAlertViewport{}, errors.New("weather provider address is invalid")
+	}
+	viewportCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	officialNWS := settings.Weather.AlertsURL == "" && (service.endpoint == defaultNWSAlertsURL || os.Getenv("TICKETS_LOCAL_NWS_API_URL") != "")
+	samples := weatherViewportSamples(south, west, north, east)
+	type sampleResult struct {
+		index    int
+		features []nwsAlertFeature
+		err      error
+	}
+	results := make(chan sampleResult, len(samples))
+	jobs := make(chan int)
+	workers := min(4, len(samples))
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for index := range jobs {
+				features, fetchErr := service.fetchAlertFeatures(viewportCtx, endpoint, samples[index][0], samples[index][1])
+				results <- sampleResult{index: index, features: features, err: fetchErr}
+			}
+		}()
+	}
+	go func() {
+		defer close(jobs)
+		for index := range samples {
+			select {
+			case jobs <- index:
+			case <-viewportCtx.Done():
+				return
+			}
+		}
+	}()
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	ordered := make([][]nwsAlertFeature, len(samples))
+	successes := 0
+	var lastErr error
+	for result := range results {
+		if result.err != nil {
+			lastErr = result.err
+			continue
+		}
+		successes++
+		ordered[result.index] = result.features
+	}
+	if officialNWS {
+		stateCode, stateErr := service.fetchNWSState(viewportCtx, (south+north)/2, (west+east)/2)
+		if stateErr == nil && stateCode != "" {
+			stateFeatures, stateFetchErr := service.fetchAlertFeaturesForArea(viewportCtx, endpoint, stateCode)
+			if stateFetchErr == nil {
+				successes++
+				ordered = append(ordered, stateFeatures)
+			} else {
+				service.logger.Printf("visible-map NWS alerts for %s: %v", stateCode, stateFetchErr)
+			}
+		} else if stateErr != nil {
+			service.logger.Printf("visible-map NWS state lookup: %v", stateErr)
+		}
+	}
+	if successes == 0 {
+		if lastErr == nil {
+			lastErr = errors.New("weather provider did not return a usable response")
+		}
+		return WeatherAlertViewport{}, lastErr
+	}
+	features := make([]nwsAlertFeature, 0)
+	seen := make(map[string]struct{})
+	for _, collection := range ordered {
+		for _, feature := range collection {
+			id := clean(feature.ID)
+			if id == "" {
+				continue
+			}
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			features = append(features, feature)
+			if len(features) >= maxWeatherAlerts {
+				break
+			}
+		}
+		if len(features) >= maxWeatherAlerts {
+			break
+		}
+	}
+	alerts := make([]WeatherAlert, 0, len(features))
+	for _, feature := range features {
+		alert := normalizeNWSAlert(feature)
+		if alert.ID == "" || alert.Event == "" {
+			continue
+		}
+		if officialNWS && len(alert.Paths) == 0 && len(feature.Properties.AffectedZones) > 0 {
+			alert.Paths = service.fetchAffectedZonePaths(viewportCtx, feature.Properties.AffectedZones)
+		}
+		alerts = append(alerts, alert)
+	}
+	sort.SliceStable(alerts, func(i, j int) bool {
+		return weatherSeverityRank(alerts[i].Severity) < weatherSeverityRank(alerts[j].Severity)
+	})
+	now := time.Now().UTC()
+	message := fmt.Sprintf("No active alerts found in %d visible-map samples", len(samples))
+	if len(alerts) > 0 {
+		message = fmt.Sprintf("%d active alert(s) across the visible map", len(alerts))
+	}
+	source := "National Weather Service"
+	if settings.Weather.AlertsURL != "" {
+		source = "Configured weather source (" + endpoint.Hostname() + ")"
+	}
+	status := WeatherAlertViewport{State: "current", Message: message, UpdatedAt: &now, Source: source, South: south, West: west, North: north, East: east, Alerts: alerts}
+	service.mu.Lock()
+	if len(service.viewCache) >= maxViewportCache {
+		var oldestKey string
+		var oldest time.Time
+		for cachedKey, cached := range service.viewCache {
+			if oldestKey == "" || cached.at.Before(oldest) {
+				oldestKey, oldest = cachedKey, cached.at
+			}
+		}
+		delete(service.viewCache, oldestKey)
+	}
+	service.viewCache[key] = weatherViewportCacheEntry{status: status, at: now}
+	service.mu.Unlock()
+	return status, nil
+}
+
+func (service *WeatherService) fetchAlertFeatures(ctx context.Context, endpoint *url.URL, latitude, longitude float64) ([]nwsAlertFeature, error) {
+	return service.fetchAlertFeaturesQuery(ctx, endpoint, map[string]string{
+		"point":  fmt.Sprintf("%.4f,%.4f", latitude, longitude),
+		"status": "actual",
+	})
+}
+
+func (service *WeatherService) fetchAlertFeaturesForArea(ctx context.Context, endpoint *url.URL, area string) ([]nwsAlertFeature, error) {
+	return service.fetchAlertFeaturesQuery(ctx, endpoint, map[string]string{"area": area, "status": "actual"})
+}
+
+func (service *WeatherService) fetchAlertFeaturesQuery(ctx context.Context, endpoint *url.URL, values map[string]string) ([]nwsAlertFeature, error) {
+	requestURL := *endpoint
+	query := requestURL.Query()
+	for key, value := range values {
+		query.Set(key, value)
+	}
+	requestURL.RawQuery = query.Encode()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), nil)
+	if err != nil {
+		return nil, errors.New("could not prepare weather request")
+	}
+	request.Header.Set("User-Agent", "TicketsLocal/"+version+" (+https://github.com/openises/tickets)")
+	request.Header.Set("Accept", "application/geo+json, application/json")
+	response, err := service.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("provider returned HTTP %d", response.StatusCode)
+	}
+	var payload nwsAlertCollection
+	if json.NewDecoder(io.LimitReader(response.Body, maxWeatherResponse)).Decode(&payload) != nil {
+		return nil, errors.New("provider returned an invalid alert response")
+	}
+	return payload.Features, nil
+}
+
+func (service *WeatherService) fetchNWSState(ctx context.Context, latitude, longitude float64) (string, error) {
+	var point struct {
+		Properties struct {
+			RelativeLocation struct {
+				Properties struct {
+					State string `json:"state"`
+				} `json:"properties"`
+			} `json:"relativeLocation"`
+		} `json:"properties"`
+	}
+	if err := service.fetchNWSJSON(ctx, fmt.Sprintf("%s/points/%.4f,%.4f", service.nwsAPIBase, latitude, longitude), &point); err != nil {
+		return "", err
+	}
+	state := strings.ToUpper(strings.TrimSpace(point.Properties.RelativeLocation.Properties.State))
+	if len(state) != 2 || state[0] < 'A' || state[0] > 'Z' || state[1] < 'A' || state[1] > 'Z' {
+		return "", errors.New("NWS did not return a valid state for the visible map center")
+	}
+	return state, nil
+}
+
+func validWeatherBounds(south, west, north, east float64) bool {
+	values := []float64{south, west, north, east}
+	for _, value := range values {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return false
+		}
+	}
+	return south >= -85.05112878 && north <= 85.05112878 && west >= -180 && east <= 180 && south < north && west < east
+}
+
+func weatherViewportSamples(south, west, north, east float64) [][2]float64 {
+	latInset := (north - south) * .08
+	lonInset := (east - west) * .08
+	latitudes := []float64{south + latInset, (south + north) / 2, north - latInset}
+	longitudes := []float64{west + lonInset, (west + east) / 2, east - lonInset}
+	samples := make([][2]float64, 0, maxViewportSamples)
+	for _, latitude := range latitudes {
+		for _, longitude := range longitudes {
+			samples = append(samples, [2]float64{latitude, longitude})
+		}
+	}
+	return samples
+}
+
+func limitWeatherAlertCoordinates(alerts []WeatherAlert, limit int) []WeatherAlert {
+	remaining := limit
+	for index := range alerts {
+		paths := make([][]MapCoordinate, 0, len(alerts[index].Paths))
+		for _, alertPath := range alerts[index].Paths {
+			if len(alertPath) < 3 || remaining < 3 {
+				continue
+			}
+			if len(alertPath) > remaining {
+				alertPath = alertPath[:remaining]
+			}
+			if len(alertPath) < 3 {
+				continue
+			}
+			paths = append(paths, alertPath)
+			remaining -= len(alertPath)
+		}
+		alerts[index].Paths = paths
+	}
+	return alerts
 }
 
 type nwsAlertCollection struct {

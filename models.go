@@ -4,7 +4,7 @@ import "time"
 
 const (
 	productName = "Tickets Local"
-	version     = "0.5.20"
+	version     = "0.5.21"
 )
 
 type State struct {
@@ -178,6 +178,19 @@ type WeatherStatus struct {
 	CenterLon float64         `json:"center_lon"`
 	Alerts    []WeatherAlert  `json:"alerts"`
 	Current   *CurrentWeather `json:"current,omitempty"`
+}
+
+type WeatherAlertViewport struct {
+	State     string         `json:"state"`
+	Message   string         `json:"message"`
+	UpdatedAt *time.Time     `json:"updated_at,omitempty"`
+	Stale     bool           `json:"stale"`
+	Source    string         `json:"source"`
+	South     float64        `json:"south"`
+	West      float64        `json:"west"`
+	North     float64        `json:"north"`
+	East      float64        `json:"east"`
+	Alerts    []WeatherAlert `json:"alerts"`
 }
 
 type CurrentWeather struct {
