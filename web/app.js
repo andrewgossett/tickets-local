@@ -3404,7 +3404,7 @@ class SituationMap {
       requestAnimationFrame(() => document.getElementById("overlay-settings")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     });
     this.trailLayer.addEventListener("pointerdown", event => {
-      if (event.target.closest("[data-drawn-overlay-id]")) event.stopPropagation();
+      if (event.target.closest("[data-drawn-overlay-id], [data-weather-alert-label], .map-kml-feature")) event.stopPropagation();
     });
     this.trailLayer.addEventListener("click", event => this.deleteDrawingFromEvent(event));
     this.trailLayer.addEventListener("click", event => this.showAlertDetails(event));

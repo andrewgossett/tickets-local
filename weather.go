@@ -23,6 +23,8 @@ const (
 	maxWeatherResponse  = 8 << 20
 	maxWeatherAlerts    = 100
 	maxAlertCoordinates = 10000
+	maxAlertZones       = 50
+	maxZoneFetchWorkers = 6
 )
 
 type WeatherService struct {
@@ -128,6 +130,7 @@ func (service *WeatherService) fetch(ctx context.Context, settings Settings) (We
 		return WeatherStatus{}, errors.New("provider returned an invalid alert response")
 	}
 	alerts := make([]WeatherAlert, 0, min(len(payload.Features), maxWeatherAlerts))
+	resolveZones := settings.Weather.AlertsURL == "" && (service.endpoint == defaultNWSAlertsURL || os.Getenv("TICKETS_LOCAL_NWS_API_URL") != "")
 	for _, feature := range payload.Features {
 		if len(alerts) >= maxWeatherAlerts {
 			break
@@ -135,6 +138,9 @@ func (service *WeatherService) fetch(ctx context.Context, settings Settings) (We
 		alert := normalizeNWSAlert(feature)
 		if alert.ID == "" || alert.Event == "" {
 			continue
+		}
+		if resolveZones && len(alert.Paths) == 0 && len(feature.Properties.AffectedZones) > 0 {
+			alert.Paths = service.fetchAffectedZonePaths(ctx, feature.Properties.AffectedZones)
 		}
 		alerts = append(alerts, alert)
 	}
@@ -279,17 +285,114 @@ type nwsAlertFeature struct {
 		Coordinates json.RawMessage `json:"coordinates"`
 	} `json:"geometry"`
 	Properties struct {
-		Event       string     `json:"event"`
-		Headline    string     `json:"headline"`
-		Severity    string     `json:"severity"`
-		Urgency     string     `json:"urgency"`
-		Certainty   string     `json:"certainty"`
-		Description string     `json:"description"`
-		Instruction string     `json:"instruction"`
-		AreaDesc    string     `json:"areaDesc"`
-		Effective   *time.Time `json:"effective"`
-		Expires     *time.Time `json:"expires"`
+		Event         string     `json:"event"`
+		Headline      string     `json:"headline"`
+		Severity      string     `json:"severity"`
+		Urgency       string     `json:"urgency"`
+		Certainty     string     `json:"certainty"`
+		Description   string     `json:"description"`
+		Instruction   string     `json:"instruction"`
+		AreaDesc      string     `json:"areaDesc"`
+		AffectedZones []string   `json:"affectedZones"`
+		Effective     *time.Time `json:"effective"`
+		Expires       *time.Time `json:"expires"`
 	} `json:"properties"`
+}
+
+type nwsZoneFeature struct {
+	Geometry struct {
+		Type        string          `json:"type"`
+		Coordinates json.RawMessage `json:"coordinates"`
+	} `json:"geometry"`
+}
+
+func (service *WeatherService) fetchAffectedZonePaths(ctx context.Context, zoneURLs []string) [][]MapCoordinate {
+	base, err := url.Parse(service.nwsAPIBase)
+	if err != nil || base.Host == "" {
+		return [][]MapCoordinate{}
+	}
+	unique := make([]string, 0, min(len(zoneURLs), maxAlertZones))
+	seen := make(map[string]struct{})
+	for _, raw := range zoneURLs {
+		if len(unique) >= maxAlertZones {
+			break
+		}
+		zoneURL, parseErr := url.Parse(strings.TrimSpace(raw))
+		if parseErr != nil || zoneURL.Scheme != base.Scheme || !strings.EqualFold(zoneURL.Host, base.Host) || !strings.HasPrefix(zoneURL.Path, "/zones/") {
+			continue
+		}
+		canonical := zoneURL.String()
+		if _, exists := seen[canonical]; exists {
+			continue
+		}
+		seen[canonical] = struct{}{}
+		unique = append(unique, canonical)
+	}
+	if len(unique) == 0 {
+		return [][]MapCoordinate{}
+	}
+	zoneCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	type result struct {
+		index int
+		paths [][]MapCoordinate
+	}
+	results := make(chan result, len(unique))
+	jobs := make(chan int)
+	workers := min(len(unique), maxZoneFetchWorkers)
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for index := range jobs {
+				var zone nwsZoneFeature
+				if err := service.fetchNWSJSON(zoneCtx, unique[index], &zone); err != nil {
+					service.logger.Printf("NWS affected zone %s: %v", path.Base(unique[index]), err)
+					results <- result{index: index}
+					continue
+				}
+				results <- result{index: index, paths: decodeWeatherPaths(zone.Geometry.Type, zone.Geometry.Coordinates)}
+			}
+		}()
+	}
+	go func() {
+		defer close(jobs)
+		for index := range unique {
+			select {
+			case jobs <- index:
+			case <-zoneCtx.Done():
+				return
+			}
+		}
+	}()
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	ordered := make([][][]MapCoordinate, len(unique))
+	for item := range results {
+		ordered[item.index] = item.paths
+	}
+	paths := make([][]MapCoordinate, 0)
+	coordinates := 0
+	for _, zonePaths := range ordered {
+		for _, zonePath := range zonePaths {
+			if len(zonePath) < 3 || coordinates >= maxAlertCoordinates {
+				continue
+			}
+			remaining := maxAlertCoordinates - coordinates
+			if len(zonePath) > remaining {
+				zonePath = zonePath[:remaining]
+			}
+			if len(zonePath) < 3 {
+				continue
+			}
+			paths = append(paths, zonePath)
+			coordinates += len(zonePath)
+		}
+	}
+	return paths
 }
 
 func normalizeNWSAlert(feature nwsAlertFeature) WeatherAlert {

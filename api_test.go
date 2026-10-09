@@ -92,7 +92,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.18`,
+		`Version 0.5.19`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -208,6 +208,7 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(scriptText, `spreadOverlappingMapMarkers(visibleMarkers)`) ||
 		strings.Contains(scriptText, `marker.title = point.label`) ||
 		!strings.Contains(scriptText, `marker.setAttribute("aria-label", point.label)`) ||
+		!strings.Contains(scriptText, `event.target.closest("[data-drawn-overlay-id], [data-weather-alert-label], .map-kml-feature")`) ||
 		!strings.Contains(scriptText, `polygon.dataset.weatherAlertLabel = alertLabel`) ||
 		!strings.Contains(stylesText, `.weather-alert-polygon[data-weather-alert-label] { pointer-events: visiblePainted; cursor: pointer; }`) {
 		t.Fatal("informational map markers must have one accessible hover label and warning polygons must be selectable")

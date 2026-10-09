@@ -114,6 +114,13 @@ Important routes:
 | `POST /api/restore/validate` | Non-mutating NDJSON restore dry run |
 | `POST /api/restore/apply` | Hash-bound restore with mandatory prior-log backup |
 
+NWS alerts retain precise alert geometry when the provider supplies it. When an
+official NWS alert has no geometry, the Host resolves its bounded
+`affectedZones` list against same-origin NWS county or forecast-zone endpoints
+and combines those shapes for the map. Zone requests are deduplicated,
+concurrency-limited, time-bounded, coordinate-bounded, cached with the weather
+status, and never followed to an arbitrary alert-supplied host.
+
 ### Persistence
 
 Each event contains a version-independent envelope and a current entity snapshot.

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a bounded NWS affected-zone fallback for alerts without native
+  geometry. Flood Watches and similar county/forecast-zone products now render
+  selectable map polygons while precise warning polygons remain unchanged.
 - Removed the browser-native map-marker tooltip that duplicated the app's
   styled hover label. Map markers retain their accessible names and show one
   consistent label when hovered or keyboard-focused.

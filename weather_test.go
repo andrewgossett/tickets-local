@@ -75,6 +75,55 @@ func TestWeatherServiceFetchesBoundsAndCachesNWSAlerts(t *testing.T) {
 	}
 }
 
+func TestWeatherServiceUsesAffectedZoneGeometryWhenAlertHasNoPolygon(t *testing.T) {
+	var zoneRequests atomic.Int32
+	var provider *httptest.Server
+	provider = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/alerts":
+			_, _ = io.WriteString(w, `{"features":[{
+				"id":"urn:oid:flood-watch",
+				"geometry":null,
+				"properties":{
+					"event":"Flood Watch",
+					"severity":"Severe",
+					"areaDesc":"Williamson County",
+					"affectedZones":["`+provider.URL+`/zones/forecast/TNZ075","`+provider.URL+`/zones/forecast/TNZ075","https://untrusted.example/zones/forecast/EVIL"]
+				}
+			}]}`)
+		case "/zones/forecast/TNZ075":
+			zoneRequests.Add(1)
+			_, _ = io.WriteString(w, `{"geometry":{"type":"MultiPolygon","coordinates":[[[[-86.9,35.7],[-86.5,35.7],[-86.5,36.1],[-86.9,35.7]]]]}}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer provider.Close()
+	t.Setenv("TICKETS_LOCAL_NWS_ALERTS_URL", provider.URL+"/alerts")
+	t.Setenv("TICKETS_LOCAL_NWS_API_URL", provider.URL)
+
+	store, err := OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := store.Snapshot().Settings
+	settings.Weather.Enabled = true
+	if _, err := store.UpdateSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	status := NewWeatherService(store, provider.Client(), log.New(io.Discard, "", 0)).Status(context.Background())
+	if status.State != "current" || len(status.Alerts) != 1 {
+		t.Fatalf("unexpected weather status: %+v", status)
+	}
+	alert := status.Alerts[0]
+	if alert.Event != "Flood Watch" || len(alert.Paths) != 1 || len(alert.Paths[0]) != 4 {
+		t.Fatalf("affected-zone geometry was not applied: %+v", alert)
+	}
+	if zoneRequests.Load() != 1 {
+		t.Fatalf("affected zone fetched %d times; want one bounded deduplicated request", zoneRequests.Load())
+	}
+}
+
 func TestWeatherServiceUsesPersistedCacheWhenProviderFails(t *testing.T) {
 	dataDir := t.TempDir()
 	now := time.Now().UTC().Add(-time.Hour)
