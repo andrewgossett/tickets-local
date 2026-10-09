@@ -216,6 +216,7 @@ type WeatherAlert struct {
 	Description string            `json:"description"`
 	Instruction string            `json:"instruction"`
 	Area        string            `json:"area"`
+	Sent        *time.Time        `json:"sent,omitempty"`
 	Effective   *time.Time        `json:"effective,omitempty"`
 	Expires     *time.Time        `json:"expires,omitempty"`
 	Paths       [][]MapCoordinate `json:"paths"`

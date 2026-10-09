@@ -3375,6 +3375,8 @@ class SituationMap {
     this.alertViewportPendingKey = "";
     this.alertViewportLoadedAt = 0;
     this.viewportAlerts = null;
+    this.knownWeatherAlertIDs = new Set();
+    this.weatherAlertBaselineReady = false;
     this.layers = loadMapLayers();
     this.hasFitInitialObjects = false;
     this.drawing = null;
@@ -4031,7 +4033,9 @@ class SituationMap {
       try {
         const status = await api(`/api/weather/alerts?${new URLSearchParams(normalized)}`);
         if (requestID !== this.alertRequest) return;
-        this.viewportAlerts = status.alerts || [];
+        const alerts = status.alerts || [];
+        this.announceNewWeatherAlerts(alerts);
+        this.viewportAlerts = alerts;
         this.alertViewportKey = key;
         this.alertViewportLoadedAt = Date.now();
         this.scheduleDraw(app.state);
@@ -4041,6 +4045,34 @@ class SituationMap {
         if (requestID === this.alertRequest) this.alertViewportPendingKey = "";
       }
     }, 450);
+  }
+
+  announceNewWeatherAlerts(alerts) {
+    const identified = alerts.map(alert => ({
+      alert,
+      key: alert.id || [alert.event, alert.area, alert.sent || alert.effective || ""].join("|")
+    })).filter(item => item.key);
+    if (!this.weatherAlertBaselineReady) {
+      identified.forEach(item => this.knownWeatherAlertIDs.add(item.key));
+      this.weatherAlertBaselineReady = true;
+      return;
+    }
+    const newAlerts = identified.filter(item => {
+      const isNew = !this.knownWeatherAlertIDs.has(item.key);
+      this.knownWeatherAlertIDs.add(item.key);
+      return isNew && /\b(warning|watch)\b/i.test(item.alert.event || item.alert.headline || "");
+    }).map(item => item.alert);
+    if (!newAlerts.length) return;
+    const dialog = $("#weather-alert-dialog");
+    $("#weather-alert-dialog-title").textContent = newAlerts.length === 1 ? "New weather alert" : `${newAlerts.length} new weather alerts`;
+    $("#weather-alert-dialog-list").innerHTML = newAlerts.map(alert => `
+      <article class="weather-alert-notice ${attr(alert.severity || "unknown")}">
+        <strong>${html(alert.event || alert.headline || "Weather alert")}</strong>
+        <span>${html([alert.area, alert.severity ? `${label(alert.severity)} severity` : ""].filter(Boolean).join(" · "))}</span>
+        ${alert.headline && alert.headline !== alert.event ? `<p>${html(alert.headline)}</p>` : ""}
+      </article>
+    `).join("");
+    if (!dialog.open) dialog.showModal();
   }
 
   drawRadar(state, center, width, height, worldSize) {

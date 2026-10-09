@@ -956,6 +956,12 @@
     </form>
   </dialog>
 
+  <dialog id="weather-alert-dialog" class="small-dialog weather-alert-dialog">
+    <header class="dialog-header"><div><p class="eyebrow">VISIBLE MAP AREA</p><h2 id="weather-alert-dialog-title">New weather alert</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+    <div class="dialog-body"><p class="form-help">A new Watch or Warning has appeared within the currently visible map area.</p><div id="weather-alert-dialog-list" class="weather-alert-notice-list"></div></div>
+    <footer class="dialog-footer"><span>Review official instructions and local procedures.</span><div><button class="primary-button dialog-close" type="button">Acknowledge</button></div></footer>
+  </dialog>
+
   <div class="shutdown-screen" id="shutdown-screen" hidden role="status" aria-live="assertive">
     <div class="shutdown-card">
       <div class="brand-mark" aria-hidden="true">TL</div>

@@ -238,6 +238,12 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(scriptText, `this.viewportAlerts === null ? (state.weather_alerts || []) : this.viewportAlerts`) {
 		t.Fatal("map warning polygons do not refresh from bounded visible-map alerts")
 	}
+	if !strings.Contains(indexHTML, `id="weather-alert-dialog"`) ||
+		!strings.Contains(scriptText, `announceNewWeatherAlerts(alerts)`) ||
+		!strings.Contains(scriptText, `/\b(warning|watch)\b/i.test`) ||
+		!strings.Contains(scriptText, `this.weatherAlertBaselineReady = true`) {
+		t.Fatal("new visible-map Watches and Warnings do not produce a deduplicated in-app popup")
+	}
 	if !strings.Contains(scriptText, `state.weather_alerts = app.weather?.alerts || app.state.weather_alerts || [];`) {
 		t.Fatal("state refreshes do not preserve weather warning polygons")
 	}

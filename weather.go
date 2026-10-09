@@ -565,6 +565,7 @@ type nwsAlertFeature struct {
 		Instruction   string     `json:"instruction"`
 		AreaDesc      string     `json:"areaDesc"`
 		AffectedZones []string   `json:"affectedZones"`
+		Sent          *time.Time `json:"sent"`
 		Effective     *time.Time `json:"effective"`
 		Expires       *time.Time `json:"expires"`
 	} `json:"properties"`
@@ -672,7 +673,7 @@ func normalizeNWSAlert(feature nwsAlertFeature) WeatherAlert {
 		Headline: abbreviate(clean(feature.Properties.Headline), 500), Severity: strings.ToLower(clean(feature.Properties.Severity)),
 		Urgency: strings.ToLower(clean(feature.Properties.Urgency)), Certainty: strings.ToLower(clean(feature.Properties.Certainty)),
 		Description: abbreviate(clean(feature.Properties.Description), 12000), Instruction: abbreviate(clean(feature.Properties.Instruction), 12000),
-		Area: abbreviate(clean(feature.Properties.AreaDesc), 1000), Effective: feature.Properties.Effective, Expires: feature.Properties.Expires,
+		Area: abbreviate(clean(feature.Properties.AreaDesc), 1000), Sent: feature.Properties.Sent, Effective: feature.Properties.Effective, Expires: feature.Properties.Expires,
 		Paths: decodeWeatherPaths(feature.Geometry.Type, feature.Geometry.Coordinates),
 	}
 }

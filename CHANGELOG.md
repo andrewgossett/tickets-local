@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added an in-app popup when a newly observed Watch or Warning first appears
+  within the visible map area, with session deduplication and a quiet initial
+  baseline so reopening the app does not announce every existing alert.
 - Made clicks on overlapping weather alert polygons report every alert at that
   map point, so one advisory no longer hides a coincident watch or warning.
 - Weather warning polygons now follow the visible map instead of remaining
