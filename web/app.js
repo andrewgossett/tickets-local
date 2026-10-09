@@ -74,6 +74,8 @@ const app = {
   mapWindowMode: new URLSearchParams(window.location.search).get("view") === "map",
   mobileMode: new URLSearchParams(window.location.search).get("view") === "mobile",
   mobileDevices: [],
+  setupWizardStep: 0,
+  setupWizardResume: null,
   map: null
 };
 
@@ -116,6 +118,7 @@ async function init() {
   bindActions();
   bindForms();
   bindDialogs();
+  bindSetupWizard();
   startClock();
   app.map = new SituationMap($("#situation-map"));
   await loadNetworkSettings();
@@ -132,6 +135,7 @@ async function init() {
   startLANStatePoll();
   startNetworkStatusPoll();
   startWeatherPoll();
+  maybeOpenSetupWizard();
 }
 
 function bindMobileCompanion() {
@@ -588,7 +592,91 @@ function bindDialogs() {
     dialog.addEventListener("click", event => {
       if (event.target === dialog) dialog.close();
     });
+    dialog.addEventListener("close", () => {
+      if (app.setupWizardResume?.dialogID !== dialog.id) return;
+      const step = app.setupWizardResume.step;
+      app.setupWizardResume = null;
+      setTimeout(() => openSetupWizard(step), 0);
+    });
   });
+}
+
+function bindSetupWizard() {
+  $("#open-setup-wizard").addEventListener("click", () => openSetupWizard(0));
+  $("#setup-wizard-back").addEventListener("click", () => {
+    app.setupWizardStep = Math.max(0, app.setupWizardStep - 1);
+    renderSetupWizard();
+  });
+  $("#setup-wizard-next").addEventListener("click", () => {
+    if (app.setupWizardStep >= 6) {
+      localStorage.setItem("tickets-local-setup-wizard", "complete");
+      $("#setup-wizard-dialog").close();
+      toast("Setup guide complete", "You can reopen it from Settings at any time.");
+      return;
+    }
+    app.setupWizardStep++;
+    renderSetupWizard();
+  });
+  $("#setup-wizard-dismiss").addEventListener("click", () => {
+    localStorage.setItem("tickets-local-setup-wizard", "dismissed");
+    $("#setup-wizard-dialog").close();
+  });
+  $("#setup-wizard-dialog").addEventListener("click", event => {
+    const button = event.target.closest("[data-setup-action]");
+    if (!button) return;
+    runSetupWizardAction(button.dataset.setupAction);
+  });
+}
+
+function maybeOpenSetupWizard() {
+  if (app.mapWindowMode || localStorage.getItem("tickets-local-setup-wizard")) return;
+  const empty = ["incidents", "responders", "facilities", "locations", "overlays"].every(key => !(app.state[key] || []).length);
+  if (empty) setTimeout(() => openSetupWizard(0), 250);
+}
+
+function openSetupWizard(step = 0) {
+  const dialog = $("#setup-wizard-dialog");
+  app.setupWizardStep = Math.max(0, Math.min(6, Number(step) || 0));
+  renderSetupWizard();
+  if (!dialog.open) dialog.showModal();
+}
+
+function renderSetupWizard() {
+  $$("[data-setup-step]").forEach(section => { section.hidden = Number(section.dataset.setupStep) !== app.setupWizardStep; });
+  $("#setup-wizard-progress-bar").style.width = `${((app.setupWizardStep + 1) / 7) * 100}%`;
+  $("#setup-wizard-back").disabled = app.setupWizardStep === 0;
+  $("#setup-wizard-next").textContent = app.setupWizardStep === 6 ? "Finish setup" : "Next";
+  const responders = (app.state.responders || []).length;
+  const facilities = (app.state.facilities || []).length;
+  const locations = (app.state.locations || []).length;
+  $("#setup-responder-count").textContent = responders ? `${responders} responder${responders === 1 ? "" : "s"} created` : "No responders created yet";
+  $("#setup-place-count").textContent = `${facilities} facilit${facilities === 1 ? "y" : "ies"} · ${locations} saved location${locations === 1 ? "" : "s"}`;
+}
+
+function openSetupSettings(targetID) {
+  $("#setup-wizard-dialog").close();
+  switchPage("settings");
+  requestAnimationFrame(() => document.getElementById(targetID)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
+
+function runSetupWizardAction(action) {
+  if (action === "network") return openSetupSettings("network-settings-form");
+  if (action === "connections") {
+    openSetupSettings("connection-tester-title");
+    loadConnections(true);
+    return;
+  }
+  if (action === "kml") return openSetupSettings("overlay-settings");
+  const records = {
+    responder: { dialogID: "responder-dialog", step: 3, open: () => openResponder() },
+    facility: { dialogID: "facility-dialog", step: 4, open: () => openFacility() },
+    location: { dialogID: "location-dialog", step: 4, open: () => openLocation() }
+  };
+  const record = records[action];
+  if (!record) return;
+  app.setupWizardResume = record;
+  $("#setup-wizard-dialog").close();
+  record.open();
 }
 
 function switchPage(page) {

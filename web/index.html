@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/png" href="/icon-64.png">
   <title>Tickets Local</title>
-  <link rel="stylesheet" href="/styles.css?v=0.5.23">
+  <link rel="stylesheet" href="/styles.css?v=0.5.24">
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -399,9 +399,14 @@
 
         <section class="page" data-page-view="settings">
           <div class="section-heading">
-            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.23</span>
+            <div><p class="eyebrow">LOCAL CONFIGURATION</p><h2>Settings</h2><p>Organization identity, map defaults, and data protection.</p></div><span class="version-badge">Version 0.5.24</span>
           </div>
           <div class="settings-grid">
+            <article class="panel data-card setup-wizard-card">
+              <div class="data-icon"><svg><use href="#i-grid"/></svg></div>
+              <div><h3>Guided setup</h3><p>Walk through computer role, external connections, map location, responders, facilities, saved locations, and KML overlays.</p></div>
+              <button class="primary-button" id="open-setup-wizard" type="button">Open setup wizard</button>
+            </article>
             <form class="panel network-settings" id="network-settings-form">
               <header class="panel-header">
                 <div><p class="eyebrow">MULTI-COMPUTER LAN</p><h3>Shared operations</h3><p>Run independently, host the authoritative data, or connect this installation to a host.</p></div>
@@ -667,7 +672,7 @@
         <section class="page" data-page-view="about">
           <div class="section-heading"><div><p class="eyebrow">PROJECT INFORMATION</p><h2>About &amp; Licenses</h2><p>Licensing, attribution, and operational limitations.</p></div></div>
           <article class="panel about-panel"><div class="settings-body">
-            <h3>Tickets Local <span class="version-badge">Version 0.5.23</span></h3>
+            <h3>Tickets Local <span class="version-badge">Version 0.5.24</span></h3>
             <p><strong>Copyright © 2026 Andrew Mark Gossett and Tickets Local contributors.</strong></p>
             <p>Tickets Local is an AI-assisted hobby project. It is not an official OpenISES release, certified dispatch system, emergency service, or substitute for validated public-safety systems and procedures.</p>
             <p><strong>No warranty:</strong> this software is provided without warranty of any kind under GNU GPL v2. Operators are responsible for evaluating its suitability, data sources, connectivity, and outputs.</p>
@@ -834,6 +839,54 @@
 	</form>
   </dialog>
 
+  <dialog id="setup-wizard-dialog" class="setup-wizard-dialog">
+    <header class="dialog-header"><div><p class="eyebrow">NEW INSTALLATION</p><h2>Tickets Local setup</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+    <div class="setup-wizard-progress" aria-label="Setup progress"><span id="setup-wizard-progress-bar"></span></div>
+    <div class="dialog-body setup-wizard-body">
+      <section class="setup-wizard-step" data-setup-step="0">
+        <p class="eyebrow">STEP 1 OF 7</p><h3>Welcome</h3>
+        <p>This wizard helps prepare a new installation without requiring Terminal. Nothing is transmitted automatically, and every external connection is optional.</p>
+        <div class="setup-wizard-note"><strong>Before operational use</strong><span>Choose the computer role, set the home map area, add resources, test enabled services, and make a complete backup.</span></div>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="1" hidden>
+        <p class="eyebrow">STEP 2 OF 7</p><h3>Computer role and map home</h3>
+        <div class="setup-choice-grid"><article><strong>Standalone</strong><span>One computer with loopback-only access.</span></article><article><strong>Host</strong><span>Shares authoritative data with authenticated clients on a trusted LAN.</span></article><article><strong>Client</strong><span>Connects to one Host and uses its data.</span></article></div>
+        <p>In Settings, choose the role first, then set the organization name, home address, coordinates, and default zoom. Host mode is for trusted private networks only.</p>
+        <button class="secondary-button" type="button" data-setup-action="network">Open network and map settings</button>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="2" hidden>
+        <p class="eyebrow">STEP 3 OF 7</p><h3>External connections</h3>
+        <div class="setup-checklist"><span><strong>APRS</strong> APRS-IS, bundled Dire Wolf, or an existing KISS TNC</span><span><strong>Weather</strong> NWS alerts, radar, and current conditions</span><span><strong>Water</strong> Search for nearby gauges instead of knowing station IDs</span><span><strong>Map feeds</strong> Repeaters, MeshCore, AREDN, storm reports, roads, and sensors</span></div>
+        <p>Enable only services you use. Credentials and LAN keys stay outside the operational event log. Use the connection monitor after saving.</p>
+        <button class="secondary-button" type="button" data-setup-action="connections">Configure and test connections</button>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="3" hidden>
+        <p class="eyebrow">STEP 4 OF 7</p><h3>Create responders and units</h3>
+        <p>Each responder can have a unit name, callsign, type, status, capabilities, two- or three-character map label, marker color, and optional APRS tracking. APRS SSIDs such as <code>-8</code> and <code>-9</code> remain distinct.</p>
+        <div class="setup-wizard-count" id="setup-responder-count">No responders created yet</div>
+        <button class="primary-button" type="button" data-setup-action="responder">Add a responder or unit</button>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="4" hidden>
+        <p class="eyebrow">STEP 5 OF 7</p><h3>Facilities and saved locations</h3>
+        <p>Facilities represent hospitals, shelters, stations, and other operational sites. Saved locations make recurring staging areas, access points, intersections, and landmarks reusable in incidents.</p>
+        <div class="setup-wizard-count" id="setup-place-count">No facilities or locations created yet</div>
+        <div class="setup-wizard-actions"><button class="primary-button" type="button" data-setup-action="facility">Add facility</button><button class="secondary-button" type="button" data-setup-action="location">Add saved location</button></div>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="5" hidden>
+        <p class="eyebrow">STEP 6 OF 7</p><h3>Import KML map information</h3>
+        <p>Import a <code>.kml</code> file to add routes, boundaries, polygons, tracks, or points. After import, choose its color, opacity, visibility, and whether to preserve colors contained in the KML.</p>
+        <div class="setup-wizard-note"><strong>Supported</strong><span>KML up to 5 MB, 2,000 features, and 50,000 coordinates. KMZ is not supported.</span></div>
+        <button class="secondary-button" type="button" data-setup-action="kml">Open KML importer</button>
+      </section>
+      <section class="setup-wizard-step" data-setup-step="6" hidden>
+        <p class="eyebrow">STEP 7 OF 7</p><h3>Verify and protect the installation</h3>
+        <div class="setup-checklist"><span>Run <strong>Test now</strong> in the connection monitor.</span><span>Confirm expected units, facilities, locations, and layers appear on the map.</span><span>Create a <strong>Complete backup</strong> and store it somewhere separate.</span><span>Test Host/Client operation on the actual trusted LAN before an incident.</span></div>
+        <p>You can reopen this wizard from Settings at any time.</p>
+      </section>
+    </div>
+    <footer class="dialog-footer setup-wizard-footer"><button class="text-button" id="setup-wizard-dismiss" type="button">Not now</button><div><button class="secondary-button" id="setup-wizard-back" type="button">Back</button><button class="primary-button" id="setup-wizard-next" type="button">Next</button></div></footer>
+  </dialog>
+
   <dialog id="responder-dialog" class="record-dialog small-dialog">
     <form id="responder-form">
       <header class="dialog-header"><div><p class="eyebrow">RESOURCE RECORD</p><h2 id="responder-dialog-title">Add responder</h2></div><button class="icon-button dialog-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
@@ -972,6 +1025,6 @@
   </div>
 
   <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
-  <script src="/app.js?v=0.5.23" defer></script>
+  <script src="/app.js?v=0.5.24" defer></script>
 </body>
 </html>

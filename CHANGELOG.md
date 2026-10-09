@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added a seven-step setup wizard for new installations covering computer role,
+  map home, external connection testing, responders and units, facilities,
+  saved locations, KML overlays, verification, and backups. The guide can be
+  dismissed, resumed after creating records, and reopened from Settings.
 - Prevented map movement from announcing already-active Watches and Warnings as
   newly issued. Popups now require an alert issuance time after the previous
   successful visible-map alert check.

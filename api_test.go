@@ -95,7 +95,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.23`,
+		`Version 0.5.24`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -245,6 +245,17 @@ func TestAPILifecycle(t *testing.T) {
 		!strings.Contains(scriptText, `issuedAt > this.weatherAlertLastCheckedAt`) ||
 		!strings.Contains(scriptText, `this.weatherAlertLastCheckedAt = checkedAt`) {
 		t.Fatal("new visible-map Watches and Warnings do not produce a time-bounded, deduplicated in-app popup")
+	}
+	if !strings.Contains(indexHTML, `id="setup-wizard-dialog"`) ||
+		!strings.Contains(indexHTML, `id="open-setup-wizard"`) ||
+		!strings.Contains(indexHTML, `data-setup-action="responder"`) ||
+		!strings.Contains(indexHTML, `data-setup-action="facility"`) ||
+		!strings.Contains(indexHTML, `data-setup-action="location"`) ||
+		!strings.Contains(indexHTML, `data-setup-action="kml"`) ||
+		!strings.Contains(scriptText, `localStorage.setItem("tickets-local-setup-wizard", "complete")`) ||
+		!strings.Contains(scriptText, `function maybeOpenSetupWizard()`) ||
+		!strings.Contains(scriptText, `loadConnections(true)`) {
+		t.Fatal("new installations do not provide a resumable guided setup for connections, resources, locations, and KML")
 	}
 	if !strings.Contains(scriptText, `state.weather_alerts = app.weather?.alerts || app.state.weather_alerts || [];`) {
 		t.Fatal("state refreshes do not preserve weather warning polygons")
