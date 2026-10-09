@@ -95,7 +95,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	for _, disclosure := range []string{
 		`data-page="about"`,
-		`Version 0.5.22`,
+		`Version 0.5.23`,
 		`AI-assisted hobby project`,
 		`provided without warranty of any kind`,
 		`href="https://www.openstreetmap.org/copyright"`,
@@ -241,8 +241,10 @@ func TestAPILifecycle(t *testing.T) {
 	if !strings.Contains(indexHTML, `id="weather-alert-dialog"`) ||
 		!strings.Contains(scriptText, `announceNewWeatherAlerts(alerts)`) ||
 		!strings.Contains(scriptText, `/\b(warning|watch)\b/i.test`) ||
-		!strings.Contains(scriptText, `this.weatherAlertBaselineReady = true`) {
-		t.Fatal("new visible-map Watches and Warnings do not produce a deduplicated in-app popup")
+		!strings.Contains(scriptText, `this.weatherAlertBaselineReady = true`) ||
+		!strings.Contains(scriptText, `issuedAt > this.weatherAlertLastCheckedAt`) ||
+		!strings.Contains(scriptText, `this.weatherAlertLastCheckedAt = checkedAt`) {
+		t.Fatal("new visible-map Watches and Warnings do not produce a time-bounded, deduplicated in-app popup")
 	}
 	if !strings.Contains(scriptText, `state.weather_alerts = app.weather?.alerts || app.state.weather_alerts || [];`) {
 		t.Fatal("state refreshes do not preserve weather warning polygons")

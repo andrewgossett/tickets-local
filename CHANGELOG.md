@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prevented map movement from announcing already-active Watches and Warnings as
+  newly issued. Popups now require an alert issuance time after the previous
+  successful visible-map alert check.
 - Added an in-app popup when a newly observed Watch or Warning first appears
   within the visible map area, with session deduplication and a quiet initial
   baseline so reopening the app does not announce every existing alert.

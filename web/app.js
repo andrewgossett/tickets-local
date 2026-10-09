@@ -3377,6 +3377,7 @@ class SituationMap {
     this.viewportAlerts = null;
     this.knownWeatherAlertIDs = new Set();
     this.weatherAlertBaselineReady = false;
+    this.weatherAlertLastCheckedAt = 0;
     this.layers = loadMapLayers();
     this.hasFitInitialObjects = false;
     this.drawing = null;
@@ -4048,6 +4049,7 @@ class SituationMap {
   }
 
   announceNewWeatherAlerts(alerts) {
+    const checkedAt = Date.now();
     const identified = alerts.map(alert => ({
       alert,
       key: alert.id || [alert.event, alert.area, alert.sent || alert.effective || ""].join("|")
@@ -4055,13 +4057,19 @@ class SituationMap {
     if (!this.weatherAlertBaselineReady) {
       identified.forEach(item => this.knownWeatherAlertIDs.add(item.key));
       this.weatherAlertBaselineReady = true;
+      this.weatherAlertLastCheckedAt = checkedAt;
       return;
     }
+    const issuedAfterLastCheck = alert => {
+      const issuedAt = Date.parse(alert.sent || alert.effective || "");
+      return Number.isFinite(issuedAt) && issuedAt > this.weatherAlertLastCheckedAt;
+    };
     const newAlerts = identified.filter(item => {
       const isNew = !this.knownWeatherAlertIDs.has(item.key);
       this.knownWeatherAlertIDs.add(item.key);
-      return isNew && /\b(warning|watch)\b/i.test(item.alert.event || item.alert.headline || "");
+      return isNew && issuedAfterLastCheck(item.alert) && /\b(warning|watch)\b/i.test(item.alert.event || item.alert.headline || "");
     }).map(item => item.alert);
+    this.weatherAlertLastCheckedAt = checkedAt;
     if (!newAlerts.length) return;
     const dialog = $("#weather-alert-dialog");
     $("#weather-alert-dialog-title").textContent = newAlerts.length === 1 ? "New weather alert" : `${newAlerts.length} new weather alerts`;
